@@ -29,6 +29,13 @@ class GGE::Perl6Regex {
                 }
                 $rxpos += 2;
             }
+            elsif $rxpos + 1 < $!pattern.chars 
+               && $!pattern.substr($rxpos + 1, 1) eq '?' {
+                if $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
+                    $to++;
+                }
+                $rxpos += 2;
+            }
             elsif $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                 $to++;
                 $rxpos++;
