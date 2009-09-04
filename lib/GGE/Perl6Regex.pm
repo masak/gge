@@ -18,6 +18,17 @@ class GGE::Perl6Regex {
                 }
                 $rxpos += 2;
             }
+            elsif $rxpos + 1 < $!pattern.chars 
+               && $!pattern.substr($rxpos + 1, 1) eq '+' {
+                if $!pattern.substr($rxpos, 1) ne $target.substr($to, 1) {
+                    last;
+                }
+                $to++;
+                while $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
+                    $to++;
+                }
+                $rxpos += 2;
+            }
             elsif $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                 $to++;
                 $rxpos++;
@@ -25,6 +36,9 @@ class GGE::Perl6Regex {
             else {
                 last;
             }
+        }
+        if $rxpos < $!pattern.chars {
+            $to = -2;
         }
         return GGE::Match.new(:$target, :$from, :$to);
     }

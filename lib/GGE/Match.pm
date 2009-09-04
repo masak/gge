@@ -5,6 +5,10 @@ class GGE::Match {
     has $!from;
     has $!to;
 
+    method true() {
+        return $!to >= $!from;
+    }
+
     method dump_str() {
         sprintf '<%s @ 0>', $!target.substr($!from, $!to - $!from);
     }
