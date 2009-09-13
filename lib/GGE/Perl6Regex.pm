@@ -11,8 +11,7 @@ class GGE::Perl6Regex {
     method postcircumfix:<( )>($target) {
         my ($from, $to, $rxpos) = 0, 0, 0;
         while $rxpos < $!pattern.chars {
-            if $rxpos + 1 < $!pattern.chars
-               && $!pattern.substr($rxpos + 1, 1) eq '*' {
+            if $!pattern.substr($rxpos + 1, 1) eq '*' {
                 while $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                     $to++;
                 }
@@ -24,8 +23,7 @@ class GGE::Perl6Regex {
                     ++$rxpos;
                 }
             }
-            elsif $rxpos + 1 < $!pattern.chars 
-               && $!pattern.substr($rxpos + 1, 1) eq '+' {
+            elsif $!pattern.substr($rxpos + 1, 1) eq '+' {
                 if $!pattern.substr($rxpos, 1) ne $target.substr($to, 1) {
                     last;
                 }
@@ -41,8 +39,7 @@ class GGE::Perl6Regex {
                     ++$rxpos;
                 }
             }
-            elsif $rxpos + 1 < $!pattern.chars 
-               && $!pattern.substr($rxpos + 1, 1) eq '?' {
+            elsif $!pattern.substr($rxpos + 1, 1) eq '?' {
                 if $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                     $to++;
                 }
