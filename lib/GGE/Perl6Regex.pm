@@ -11,7 +11,10 @@ class GGE::Perl6Regex {
     method postcircumfix:<( )>($target) {
         my ($from, $to, $rxpos) = 0, 0, 0;
         while $rxpos < $!pattern.chars {
-            if $!pattern.substr($rxpos + 1, 1) eq '*' {
+            if $!pattern.substr($rxpos + 1, 2) eq '*?' {
+                ++$rxpos;
+            }
+            elsif $!pattern.substr($rxpos + 1, 1) eq '*' {
                 while $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                     $to++;
                 }
