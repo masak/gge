@@ -8,25 +8,29 @@ class GGE::Perl6Regex {
         return self.bless(*, :$pattern);
     }
 
+    submethod p($pos, $substr) {
+        $!pattern.substr($pos, $substr.chars) eq $substr;
+    }
+
     method postcircumfix:<( )>($target) {
         my ($from, $to, $rxpos) = 0, 0, 0;
         while $rxpos < $!pattern.chars {
-            if $!pattern.substr($rxpos + 1, 2) eq '*?' {
+            if self.p($rxpos + 1, '*?') {
                 ++$rxpos;
             }
-            elsif $!pattern.substr($rxpos + 1, 1) eq '*' {
+            elsif self.p($rxpos + 1, '*') {
                 while $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                     $to++;
                 }
                 $rxpos += 2;
-                if $!pattern.substr($rxpos, 1) eq ':' {
+                if self.p($rxpos, ':') {
                     ++$rxpos;
                 }
-                if $!pattern.substr($rxpos, 1) eq '!' {
+                if self.p($rxpos, '!') {
                     ++$rxpos;
                 }
             }
-            elsif $!pattern.substr($rxpos + 1, 1) eq '+' {
+            elsif self.p($rxpos + 1, '+') {
                 if $!pattern.substr($rxpos, 1) ne $target.substr($to, 1) {
                     last;
                 }
@@ -35,26 +39,26 @@ class GGE::Perl6Regex {
                     $to++;
                 }
                 $rxpos += 2;
-                if $!pattern.substr($rxpos, 1) eq ':' {
+                if self.p($rxpos, ':') {
                     ++$rxpos;
                 }
-                if $!pattern.substr($rxpos, 1) eq '!' {
+                if self.p($rxpos, '!') {
                     ++$rxpos;
                 }
             }
-            elsif $!pattern.substr($rxpos + 1, 1) eq '?' {
+            elsif self.p($rxpos + 1, '?') {
                 if $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
                     $to++;
                 }
                 $rxpos += 2;
-                if $!pattern.substr($rxpos, 1) eq ':' {
+                if self.p($rxpos, ':') {
                     ++$rxpos;
                 }
-                if $!pattern.substr($rxpos, 1) eq '!' {
+                if self.p($rxpos, '!') {
                     ++$rxpos;
                 }
             }
-            elsif $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
+            elsif self.p($rxpos, $target.substr($to, 1)) {
                 $to++;
                 $rxpos++;
             }
