@@ -10,6 +10,8 @@ class GGE::Match {
     }
 
     method dump_str() {
-        sprintf '<%s @ 0>', $!target.substr($!from, $!to - $!from);
+        ?self.true()
+            ?? sprintf '<%s @ 0>', $!target.substr($!from, $!to - $!from)
+            !! '';
     }
 }

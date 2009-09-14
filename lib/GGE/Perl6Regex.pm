@@ -27,15 +27,22 @@ class GGE::Perl6Regex {
                     $term<max> = 1;
                 }
                 $rxpos += 2;
-                if self.p($rxpos, ':') {
-                    $term<ratchet> = True;
-                    ++$rxpos;
+                if self.p($rxpos, ':?') {
+                    $term<type> = 'eager';
+                    $rxpos += 2;
                 }
-                if self.p($rxpos, '!') {
-                    ++$rxpos;
+                elsif self.p($rxpos, ':!') {
+                    $rxpos += 2;
                 }
                 elsif self.p($rxpos, '?') {
                     $term<type> = 'eager';
+                    ++$rxpos;
+                }
+                elsif self.p($rxpos, '!') {
+                    ++$rxpos;
+                }
+                elsif self.p($rxpos, ':') {
+                    $term<ratchet> = True;
                     ++$rxpos;
                 }
             }
@@ -71,7 +78,11 @@ class GGE::Perl6Regex {
                     next;
                 }
                 if $backtracking {
-                    if .<type> eq 'greedy' {
+                    if .<ratchet> {
+                        $termindex = -1;
+                        last;
+                    }
+                    elsif .<type> eq 'greedy' {
                         # we were too greedy, so try to back down one
                         if .<reps> > .<min> {
                             $to -= $l;
