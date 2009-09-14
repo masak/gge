@@ -14,15 +14,17 @@ class GGE::Perl6Regex {
 
     method postcircumfix:<( )>($target) {
         my $rxpos = 0;
+        my $ratchet = False;
         my @terms;
         while $rxpos < $!pattern.chars {
             my $term;
             if self.p($rxpos, ':ratchet') {
+                $ratchet = True;
                 $rxpos += 8;
                 next;
             }
             elsif (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
-                $term = { :type<greedy>, :min(0), :max(Inf),
+                $term = { :type<greedy>, :min(0), :max(Inf), :$ratchet,
                           :expr($!pattern.substr($rxpos, 1)) };
                 if $op eq '+' {
                     $term<min> = 1;
@@ -32,17 +34,21 @@ class GGE::Perl6Regex {
                 }
                 $rxpos += 2;
                 if self.p($rxpos, ':?') {
+                    $term<ratchet> = False;
                     $term<type> = 'eager';
                     $rxpos += 2;
                 }
                 elsif self.p($rxpos, ':!') {
+                    $term<ratchet> = False;
                     $rxpos += 2;
                 }
                 elsif self.p($rxpos, '?') {
+                    $term<ratchet> = False;
                     $term<type> = 'eager';
                     ++$rxpos;
                 }
                 elsif self.p($rxpos, '!') {
+                    $term<ratchet> = False;
                     ++$rxpos;
                 }
                 elsif self.p($rxpos, ':') {
