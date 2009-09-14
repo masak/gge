@@ -17,7 +17,11 @@ class GGE::Perl6Regex {
         my @terms;
         while $rxpos < $!pattern.chars {
             my $term;
-            if (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
+            if self.p($rxpos, ':ratchet') {
+                $rxpos += 8;
+                next;
+            }
+            elsif (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
                 $term = { :type<greedy>, :min(0), :max(Inf),
                           :expr($!pattern.substr($rxpos, 1)) };
                 if $op eq '+' {
@@ -45,6 +49,10 @@ class GGE::Perl6Regex {
                     $term<ratchet> = True;
                     ++$rxpos;
                 }
+            }
+            elsif self.p($rxpos, ' ') {
+                ++$rxpos;
+                next;
             }
             else {
                 $term = { :type<greedy>, :min(1), :max(1),
