@@ -17,9 +17,15 @@ class GGE::Perl6Regex {
         my @terms;
         while $rxpos < $!pattern.chars {
             my $term;
-            if self.p($rxpos + 1, '*') {
+            if (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
                 $term = { :type<greedy>, :min(0), :max(Inf),
                           :expr($!pattern.substr($rxpos, 1)) };
+                if $op eq '+' {
+                    $term<min> = 1;
+                }
+                elsif $op eq '?' {
+                    $term<max> = 1;
+                }
                 $rxpos += 2;
                 if self.p($rxpos, ':') {
                     $term<ratchet> = True;
@@ -30,28 +36,6 @@ class GGE::Perl6Regex {
                 }
                 elsif self.p($rxpos, '?') {
                     $term<type> = 'eager';
-                    ++$rxpos;
-                }
-            }
-            elsif self.p($rxpos + 1, '+') {
-                $term = { :type<greedy>, :min(1), :max(Inf),
-                          :expr($!pattern.substr($rxpos, 1)) };
-                $rxpos += 2;
-                if self.p($rxpos, ':') {
-                    ++$rxpos;
-                }
-                if self.p($rxpos, '!') {
-                    ++$rxpos;
-                }
-            }
-            elsif self.p($rxpos + 1, '?') {
-                $term = { :type<greedy>, :min(0), :max(1),
-                          :expr($!pattern.substr($rxpos, 1)) };
-                $rxpos += 2;
-                if self.p($rxpos, ':') {
-                    ++$rxpos;
-                }
-                if self.p($rxpos, '!') {
                     ++$rxpos;
                 }
             }
