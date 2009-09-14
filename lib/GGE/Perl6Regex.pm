@@ -13,31 +13,29 @@ class GGE::Perl6Regex {
     }
 
     method postcircumfix:<( )>($target) {
-        my ($from, $to, $rxpos) = 0, 0, 0;
+        my $rxpos = 0;
+        my @terms;
         while $rxpos < $!pattern.chars {
-            if self.p($rxpos + 1, '*?') {
-                ++$rxpos;
-            }
-            elsif self.p($rxpos + 1, '*') {
-                while $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
-                    $to++;
-                }
+            my $term;
+            if self.p($rxpos + 1, '*') {
+                $term = { :type<greedy>, :min(0), :max(Inf),
+                          :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos += 2;
                 if self.p($rxpos, ':') {
+                    $term<ratchet> = True;
                     ++$rxpos;
                 }
                 if self.p($rxpos, '!') {
                     ++$rxpos;
                 }
+                elsif self.p($rxpos, '?') {
+                    $term<type> = 'eager';
+                    ++$rxpos;
+                }
             }
             elsif self.p($rxpos + 1, '+') {
-                if $!pattern.substr($rxpos, 1) ne $target.substr($to, 1) {
-                    last;
-                }
-                $to++;
-                while $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
-                    $to++;
-                }
+                $term = { :type<greedy>, :min(1), :max(Inf),
+                          :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos += 2;
                 if self.p($rxpos, ':') {
                     ++$rxpos;
@@ -47,9 +45,8 @@ class GGE::Perl6Regex {
                 }
             }
             elsif self.p($rxpos + 1, '?') {
-                if $!pattern.substr($rxpos, 1) eq $target.substr($to, 1) {
-                    $to++;
-                }
+                $term = { :type<greedy>, :min(0), :max(1),
+                          :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos += 2;
                 if self.p($rxpos, ':') {
                     ++$rxpos;
@@ -58,15 +55,73 @@ class GGE::Perl6Regex {
                     ++$rxpos;
                 }
             }
-            elsif self.p($rxpos, $target.substr($to, 1)) {
-                $to++;
+            else {
+                $term = { :type<greedy>, :min(1), :max(1),
+                          :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos++;
             }
-            else {
-                last;
+            push @terms, $term;
+        }
+        my $termindex = 0;
+        my ($from, $to) = 0, 0;
+        my $backtracking = False;
+        while 0 <= $termindex < +@terms {
+            given @terms[$termindex] {
+                .<reps> //= 0;
+                my $l = .<expr>.chars;
+                # RAKUDO: Must do this because there are no labels
+                my $failed = False;
+                while .<reps> < .<min> && !$failed {
+                    if .<expr> eq $target.substr($to, $l) {
+                        $to += $l;
+                        .<reps>++;
+                    }
+                    else {
+                        .<reps> = 0;
+                        $failed = True;
+                    }
+                }
+                if $failed {
+                    $backtracking = True;
+                    $termindex--;
+                    next;
+                }
+                if $backtracking {
+                    if .<type> eq 'greedy' {
+                        # we were too greedy, so try to back down one
+                        if .<reps> > .<min> {
+                            $to -= $l;
+                            .<reps>--;
+                        }
+                        else {
+                            $termindex--;
+                            next;
+                        }
+                    }
+                    else { # we were too eager, so try to add one
+                        if .<reps> < .<max>
+                           && .<expr> eq $target.substr($to, $l) {
+                            $to += $l;
+                            .<reps>++;
+                        }
+                        else {
+                            $termindex--;
+                            next;
+                        }
+                    }
+                    $backtracking = False;
+                }
+                elsif .<type> eq 'greedy' {
+                    while .<reps> < .<max>
+                          && .<expr> eq $target.substr($to, $l) {
+                        $to += $l;
+                        .<reps>++;
+                    }
+                }
+                $termindex++;
             }
         }
-        if $rxpos < $!pattern.chars {
+        if $termindex < 0 {
             $to = -2;
         }
         return GGE::Match.new(:$target, :$from, :$to);
