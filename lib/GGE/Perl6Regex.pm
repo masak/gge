@@ -59,18 +59,23 @@ class GGE::Perl6Regex {
                           :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos += 3;
                 self.parse-backtracking-modifiers($rxpos, $term);
-                die 'No "{" found'
-                    unless self.p($rxpos, '{');
-                $term<min> = $term<max> = $!pattern.substr($rxpos + 1, 1);
-                $rxpos += 2;
+                my $brackets = False;
+                if self.p($rxpos, '{') {
+                    $brackets = True;
+                    ++$rxpos;
+                }
+                $term<min> = $term<max> = $!pattern.substr($rxpos, 1);
+                $rxpos++;
                 if self.p($rxpos, '..') {
                     $rxpos += 2;
                     $term<max> = $!pattern.substr($rxpos, 1);
                     ++$rxpos;
                 }
-                die 'No "}" found'
-                    unless self.p($rxpos, '}');
-                $rxpos += 1;
+                if $brackets {
+                    die 'No "}" found'
+                        unless self.p($rxpos, '}');
+                    $rxpos += 1;
+                }
             }
             elsif (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
                 $term = { :type<greedy>, :min(0), :max(Inf), :$ratchet,
