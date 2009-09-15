@@ -12,6 +12,12 @@ class GGE::Perl6Regex {
         $!pattern.substr($pos, $substr.chars) eq $substr;
     }
 
+    sub matches($string, $pos, $pattern) {
+        $pattern eq '.'
+            ?? $pos < $string.chars
+            !! $string.substr($pos, $pattern.chars) eq $pattern;
+    }
+
     method postcircumfix:<( )>($target) {
         my $rxpos = 0;
         my $ratchet = False;
@@ -22,6 +28,17 @@ class GGE::Perl6Regex {
                 $ratchet = True;
                 $rxpos += 8;
                 next;
+            }
+            elsif self.p($rxpos + 1, '**') {
+                $term = { :type<greedy>, :$ratchet,
+                          :expr($!pattern.substr($rxpos, 1)) };
+                $rxpos += 3;
+                die 'No "{" found'
+                    unless self.p($rxpos, '{');
+                $term<min> = $term<max> = $!pattern.substr($rxpos + 1, 1);
+                die 'No "}" found'
+                    unless self.p($rxpos + 2, '}');
+                $rxpos += 3;
             }
             elsif (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
                 $term = { :type<greedy>, :min(0), :max(Inf), :$ratchet,
@@ -77,7 +94,7 @@ class GGE::Perl6Regex {
                 # RAKUDO: Must do this because there are no labels
                 my $failed = False;
                 while .<reps> < .<min> && !$failed {
-                    if .<expr> eq $target.substr($to, $l) {
+                    if matches($target, $to, .<expr>) {
                         $to += $l;
                         .<reps>++;
                     }
@@ -109,7 +126,7 @@ class GGE::Perl6Regex {
                     }
                     else { # we were too eager, so try to add one
                         if .<reps> < .<max>
-                           && .<expr> eq $target.substr($to, $l) {
+                           && matches($target, $to, .<expr>) {
                             $to += $l;
                             .<reps>++;
                         }
@@ -122,7 +139,7 @@ class GGE::Perl6Regex {
                 }
                 elsif .<type> eq 'greedy' {
                     while .<reps> < .<max>
-                          && .<expr> eq $target.substr($to, $l) {
+                          && matches($target, $to, .<expr>) {
                         $to += $l;
                         .<reps>++;
                     }
