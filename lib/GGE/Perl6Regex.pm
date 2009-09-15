@@ -18,6 +18,31 @@ class GGE::Perl6Regex {
             !! $string.substr($pos, $pattern.chars) eq $pattern;
     }
 
+    submethod parse-backtracking-modifiers($rxpos is rw, $term is rw) {
+        if self.p($rxpos, ':?') {
+            $term<ratchet> = False;
+            $term<type> = 'eager';
+            $rxpos += 2;
+        }
+        elsif self.p($rxpos, ':!') {
+            $term<ratchet> = False;
+            $rxpos += 2;
+        }
+        elsif self.p($rxpos, '?') {
+            $term<ratchet> = False;
+            $term<type> = 'eager';
+            ++$rxpos;
+        }
+        elsif self.p($rxpos, '!') {
+            $term<ratchet> = False;
+            ++$rxpos;
+        }
+        elsif self.p($rxpos, ':') {
+            $term<ratchet> = True;
+            ++$rxpos;
+        }
+    }
+
     method postcircumfix:<( )>($target) {
         my $rxpos = 0;
         my $ratchet = False;
@@ -33,28 +58,7 @@ class GGE::Perl6Regex {
                 $term = { :type<greedy>, :$ratchet,
                           :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos += 3;
-                if self.p($rxpos, ':?') {
-                    $term<ratchet> = False;
-                    $term<type> = 'eager';
-                    $rxpos += 2;
-                }
-                elsif self.p($rxpos, ':!') {
-                    $term<ratchet> = False;
-                    $rxpos += 2;
-                }
-                elsif self.p($rxpos, '?') {
-                    $term<ratchet> = False;
-                    $term<type> = 'eager';
-                    ++$rxpos;
-                }
-                elsif self.p($rxpos, '!') {
-                    $term<ratchet> = False;
-                    ++$rxpos;
-                }
-                elsif self.p($rxpos, ':') {
-                    $term<ratchet> = True;
-                    ++$rxpos;
-                }
+                self.parse-backtracking-modifiers($rxpos, $term);
                 die 'No "{" found'
                     unless self.p($rxpos, '{');
                 $term<min> = $term<max> = $!pattern.substr($rxpos + 1, 1);
@@ -78,28 +82,7 @@ class GGE::Perl6Regex {
                     $term<max> = 1;
                 }
                 $rxpos += 2;
-                if self.p($rxpos, ':?') {
-                    $term<ratchet> = False;
-                    $term<type> = 'eager';
-                    $rxpos += 2;
-                }
-                elsif self.p($rxpos, ':!') {
-                    $term<ratchet> = False;
-                    $rxpos += 2;
-                }
-                elsif self.p($rxpos, '?') {
-                    $term<ratchet> = False;
-                    $term<type> = 'eager';
-                    ++$rxpos;
-                }
-                elsif self.p($rxpos, '!') {
-                    $term<ratchet> = False;
-                    ++$rxpos;
-                }
-                elsif self.p($rxpos, ':') {
-                    $term<ratchet> = True;
-                    ++$rxpos;
-                }
+                self.parse-backtracking-modifiers($rxpos, $term);
             }
             elsif self.p($rxpos, ' ') {
                 ++$rxpos;
