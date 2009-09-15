@@ -33,6 +33,28 @@ class GGE::Perl6Regex {
                 $term = { :type<greedy>, :$ratchet,
                           :expr($!pattern.substr($rxpos, 1)) };
                 $rxpos += 3;
+                if self.p($rxpos, ':?') {
+                    $term<ratchet> = False;
+                    $term<type> = 'eager';
+                    $rxpos += 2;
+                }
+                elsif self.p($rxpos, ':!') {
+                    $term<ratchet> = False;
+                    $rxpos += 2;
+                }
+                elsif self.p($rxpos, '?') {
+                    $term<ratchet> = False;
+                    $term<type> = 'eager';
+                    ++$rxpos;
+                }
+                elsif self.p($rxpos, '!') {
+                    $term<ratchet> = False;
+                    ++$rxpos;
+                }
+                elsif self.p($rxpos, ':') {
+                    $term<ratchet> = True;
+                    ++$rxpos;
+                }
                 die 'No "{" found'
                     unless self.p($rxpos, '{');
                 $term<min> = $term<max> = $!pattern.substr($rxpos + 1, 1);
