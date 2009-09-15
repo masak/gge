@@ -84,72 +84,76 @@ class GGE::Perl6Regex {
             }
             push @terms, $term;
         }
-        my $termindex = 0;
-        my ($from, $to) = 0, 0;
-        my $backtracking = False;
-        while 0 <= $termindex < +@terms {
-            given @terms[$termindex] {
-                .<reps> //= 0;
-                my $l = .<expr>.chars;
-                # RAKUDO: Must do this because there are no labels
-                my $failed = False;
-                while .<reps> < .<min> && !$failed {
-                    if matches($target, $to, .<expr>) {
-                        $to += $l;
-                        .<reps>++;
-                    }
-                    else {
+        for ^$target.chars -> $from {
+            my $to = $from;
+            my $termindex = 0;
+            my $backtracking = False;
+            while 0 <= $termindex < +@terms {
+                given @terms[$termindex] {
+                    unless $backtracking {
                         .<reps> = 0;
-                        $failed = True;
                     }
-                }
-                if $failed {
-                    $backtracking = True;
-                    $termindex--;
-                    next;
-                }
-                if $backtracking {
-                    if .<ratchet> {
-                        $termindex = -1;
-                        last;
-                    }
-                    elsif .<type> eq 'greedy' {
-                        # we were too greedy, so try to back down one
-                        if .<reps> > .<min> {
-                            $to -= $l;
-                            .<reps>--;
-                        }
-                        else {
-                            $termindex--;
-                            next;
-                        }
-                    }
-                    else { # we were too eager, so try to add one
-                        if .<reps> < .<max>
-                           && matches($target, $to, .<expr>) {
+                    my $l = .<expr>.chars;
+                    # RAKUDO: Must do this because there are no labels
+                    my $failed = False;
+                    while .<reps> < .<min> && !$failed {
+                        if matches($target, $to, .<expr>) {
                             $to += $l;
                             .<reps>++;
                         }
                         else {
-                            $termindex--;
-                            next;
+                            .<reps> = 0;
+                            $failed = True;
                         }
                     }
-                    $backtracking = False;
-                }
-                elsif .<type> eq 'greedy' {
-                    while .<reps> < .<max>
-                          && matches($target, $to, .<expr>) {
-                        $to += $l;
-                        .<reps>++;
+                    if $failed {
+                        $backtracking = True;
+                        $termindex--;
+                        next;
                     }
+                    if $backtracking {
+                        if .<ratchet> {
+                            $termindex = -1;
+                            last;
+                        }
+                        elsif .<type> eq 'greedy' {
+                            # we were too greedy, so try to back down one
+                            if .<reps> > .<min> {
+                                $to -= $l;
+                                .<reps>--;
+                            }
+                            else {
+                                $termindex--;
+                                next;
+                            }
+                        }
+                        else { # we were too eager, so try to add one
+                            if .<reps> < .<max>
+                               && matches($target, $to, .<expr>) {
+                                $to += $l;
+                                .<reps>++;
+                            }
+                            else {
+                                $termindex--;
+                                next;
+                            }
+                        }
+                        $backtracking = False;
+                    }
+                    elsif .<type> eq 'greedy' {
+                        while .<reps> < .<max>
+                              && matches($target, $to, .<expr>) {
+                            $to += $l;
+                            .<reps>++;
+                        }
+                    }
+                    $termindex++;
                 }
-                $termindex++;
+            }
+            if $termindex == +@terms {
+                return GGE::Match.new(:$target, :$from, :$to);
             }
         }
-        if $termindex < 0 {
-            $to = -2;
-        }
-        return GGE::Match.new(:$target, :$from, :$to);
+        return GGE::Match.new(:$target, :from(0), :to(-2));
     }
 }
