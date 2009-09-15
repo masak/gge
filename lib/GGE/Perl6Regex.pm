@@ -36,9 +36,15 @@ class GGE::Perl6Regex {
                 die 'No "{" found'
                     unless self.p($rxpos, '{');
                 $term<min> = $term<max> = $!pattern.substr($rxpos + 1, 1);
+                $rxpos += 2;
+                if self.p($rxpos, '..') {
+                    $rxpos += 2;
+                    $term<max> = $!pattern.substr($rxpos, 1);
+                    ++$rxpos;
+                }
                 die 'No "}" found'
-                    unless self.p($rxpos + 2, '}');
-                $rxpos += 3;
+                    unless self.p($rxpos, '}');
+                $rxpos += 1;
             }
             elsif (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
                 $term = { :type<greedy>, :min(0), :max(Inf), :$ratchet,
