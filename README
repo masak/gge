@@ -35,6 +35,10 @@ drop-in replacement for PGE stems from the fact that now that regular
 expressions _are_ in fact available in the Perl 6 language (through PGE), it
 would be a shame not to use them. Of course, it would be a fun challenge to
 restrict the writing of GGE to a mere subset of Perl 6 -- one not using any
-regexes at all, directly or indirectly -- but that is not the kind of fun aimed
-for in this case. Future teams of developers are welcome to aim for that kind
-of fun, should they wish.
+regexes at all, directly or indirectly -- but that is not the kind of fun
+optimized for in this case. Future teams of developers are welcome to
+optimize for that kind of fun, should they wish.
+
+== License
+
+Code coming from the Parrot repository is Artistic License 2.0. See LICENSE.
