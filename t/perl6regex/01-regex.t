@@ -6,6 +6,7 @@ sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() }
 
 my @test-files = <
     quantifiers
+    metachars
 >;
 
 for @test-files -> $test-file {
