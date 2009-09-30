@@ -1,0 +1,10 @@
+#!/usr/local/bin/perl6
+use v6;
+use GGE;
+
+die "Usage: ./test-regex <pattern> <target>"
+    unless @*ARGS == 2;
+
+my ($pattern, $target) = @*ARGS;
+my GGE::Match $match = GGE::Perl6Regex.new($pattern).($target, :debug);
+say $match.dump_str() || 'No match';

@@ -43,7 +43,7 @@ class GGE::Perl6Regex {
         }
     }
 
-    method postcircumfix:<( )>($target) {
+    method postcircumfix:<( )>($target, :$debug) {
         my $rxpos = 0;
         my $ratchet = False;
         my @terms;
@@ -102,14 +102,22 @@ class GGE::Perl6Regex {
             my $to = $from;
             my $termindex = 0;
             my $backtracking = False;
+            my &DEBUG = $debug
+                            ?? -> *@m { say |@m,
+                                            " at index $termindex,",
+                                            " position $to" }
+                            !! -> *@m { #`[debugging off] };
             while 0 <= $termindex < +@terms {
                 given @terms[$termindex] {
                     when Str {
                         if matches($target, $to, $_) {
+                            DEBUG "Matched '$_'";
                             $to += .chars;
+                            DEBUG 'Proceeding';
                             $termindex++;
                         }
                         else {
+                            DEBUG 'Turning on backtracking';
                             $backtracking = True;
                             $termindex--;
                             next;
@@ -123,31 +131,37 @@ class GGE::Perl6Regex {
                     my $failed = False;
                     while .<reps> < .<min> && !$failed {
                         if matches($target, $to, .<expr>) {
+                            DEBUG q[Matched '], .<expr>, q['];
                             $to += $l;
                             .<reps>++;
                         }
                         else {
+                            DEBUG 'Failed to match ', .<expr>;
                             .<reps> = 0;
                             $failed = True;
                         }
                     }
                     if $failed {
+                        DEBUG 'Turning on backtracking';
                         $backtracking = True;
                         $termindex--;
                         next;
                     }
                     if $backtracking {
                         if .<ratchet> {
+                            DEBUG 'Failed to match';
                             $termindex = -1;
                             last;
                         }
                         elsif .<type> eq 'greedy' {
                             # we were too greedy, so try to back down one
                             if .<reps> > .<min> {
+                                DEBUG "Backing left $l steps";
                                 $to -= $l;
                                 .<reps>--;
                             }
                             else {
+                                DEBUG 'Retreating';
                                 $termindex--;
                                 next;
                             }
@@ -155,27 +169,33 @@ class GGE::Perl6Regex {
                         else { # we were too eager, so try to add one
                             if .<reps> < .<max>
                                && matches($target, $to, .<expr>) {
+                                DEBUG "Backing right $l steps";
                                 $to += $l;
                                 .<reps>++;
                             }
                             else {
+                                DEBUG 'Retreating';
                                 $termindex--;
                                 next;
                             }
                         }
+                        DEBUG 'Turning off backtracking';
                         $backtracking = False;
                     }
                     elsif .<type> eq 'greedy' {
                         while .<reps> < .<max>
                               && matches($target, $to, .<expr>) {
+                            DEBUG q[Matched '], .<expr>, q['];
                             $to += $l;
                             .<reps>++;
                         }
                     }
+                    DEBUG 'Proceeding';
                     $termindex++;
                 }
             }
             if $termindex == +@terms {
+                DEBUG 'Match complete';
                 return GGE::Match.new(:$target, :$from, :$to);
             }
         }
