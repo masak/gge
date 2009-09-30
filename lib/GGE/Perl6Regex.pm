@@ -54,10 +54,9 @@ class GGE::Perl6Regex {
                 $rxpos += 8;
                 next;
             }
-            elsif self.p($rxpos + 1, '**') {
-                $term = { :type<greedy>, :$ratchet,
-                          :expr($!pattern.substr($rxpos, 1)) };
-                $rxpos += 3;
+            elsif self.p($rxpos, '**') {
+                $term = { :type<greedy>, :$ratchet, :expr(@terms.pop) };
+                $rxpos += 2;
                 self.parse-backtracking-modifiers($rxpos, $term);
                 my $brackets = False;
                 if self.p($rxpos, '{') {
@@ -77,16 +76,16 @@ class GGE::Perl6Regex {
                     $rxpos += 1;
                 }
             }
-            elsif (my $op = $!pattern.substr($rxpos + 1, 1)) eq '*'|'+'|'?' {
+            elsif (my $op = $!pattern.substr($rxpos, 1)) eq '*'|'+'|'?' {
                 $term = { :type<greedy>, :min(0), :max(Inf), :$ratchet,
-                          :expr($!pattern.substr($rxpos, 1)) };
+                          :expr(@terms.pop) };
                 if $op eq '+' {
                     $term<min> = 1;
                 }
                 elsif $op eq '?' {
                     $term<max> = 1;
                 }
-                $rxpos += 2;
+                ++$rxpos;
                 self.parse-backtracking-modifiers($rxpos, $term);
             }
             elsif self.p($rxpos, ' ') {
@@ -94,8 +93,7 @@ class GGE::Perl6Regex {
                 next;
             }
             else {
-                $term = { :type<greedy>, :min(1), :max(1),
-                          :expr($!pattern.substr($rxpos, 1)) };
+                $term = $!pattern.substr($rxpos, 1);
                 $rxpos++;
             }
             push @terms, $term;
@@ -106,6 +104,17 @@ class GGE::Perl6Regex {
             my $backtracking = False;
             while 0 <= $termindex < +@terms {
                 given @terms[$termindex] {
+                    when Str {
+                        if matches($target, $to, $_) {
+                            $to += .chars;
+                            $termindex++;
+                        }
+                        else {
+                            $backtracking = True;
+                            $termindex--;
+                            next;
+                        }
+                    }
                     unless $backtracking {
                         .<reps> = 0;
                     }
