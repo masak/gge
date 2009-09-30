@@ -202,9 +202,15 @@ a**:?2..4		baaabbb		y	two "a" characters (non-greedy)
 a**!2..4		baaabbb		y	three "a" characters (explicit greed)
 a**:!2..4		baaabbb		y	three "a" characters (explicit greed)
 
+# todo Won't do ** with a term in GGE yet
 ^\w+ ** ','$		foo,bar,baz	y	** with a term
+# todo Won't do ** with a term in GGE yet
 ^\w+ **? ',' ....$	foo,bar,baz	y	**? with a term
+# todo Won't do ** with a term in GGE yet
 ^\w+ **[','\s*]$	foo, bar, baz	y	**? with term + ws
+# todo Won't do ** with a term in GGE yet
 :sigspace ^\w+ ** ',' $	foo, bar ,baz	y	** under :sigspace
+# todo Won't do ** with a term in GGE yet
 :sigspace ^\w+**',' $	foo, bar ,baz	n	** under :sigspace w/o ws
+# todo Won't do ** with a term in GGE yet
 :sigspace ^\w+**',' $	foo,bar,baz	y	** under :sigspace w/o ws

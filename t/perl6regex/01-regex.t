@@ -2,7 +2,7 @@ use v6;
 use Test;
 use GGE;
 
-sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() }
+sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() } #' (vim fix)
 
 my @test-files = <
     quantifiers
@@ -10,11 +10,15 @@ my @test-files = <
 >;
 
 for @test-files -> $test-file {
-    my $filename = dirname($*PROGRAM_NAME) ~ 'rx_' ~ $test-file;
-    my $fh = open $filename, :r;
-    my $i = 0;
+    my Str $filename = dirname($*PROGRAM_NAME) ~ 'rx_' ~ $test-file;
+    my IO $fh = open $filename, :r;
+    my Int $i = 0;
     for $fh.lines -> $line {
-        next if $line ~~ '';
+        next if $line eq '';
+        if $line ~~ /^ \# \s* todo \s* (.*) $/ {
+            my $reason = $0;
+            todo($reason);
+        }
         next if $line ~~ /^ \#/;
         $i++;
         $line ~~ /^ (<-[\t]>*) \t+ (<-[\t]>+) \t+ (<-[\t]>+) \t+ (.*) $/
