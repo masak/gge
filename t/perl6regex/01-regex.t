@@ -21,7 +21,7 @@ for @test-files -> $test-file {
             or die "Unrecognized line format: $line";
         my ($pattern, $target, $result, $description) = $0, $1, $2, $3;
         $pattern = backslash_escape($pattern);
-        $target  = backslash_escape($target);
+        $target  = $target eq q[''] ?? '' !! backslash_escape($target);
         my $full-description = "[$test-file:$i] $description";
         my $match;
         my $failed = 1; # RAKUDO: Manual CATCH workaround
