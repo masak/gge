@@ -1,6 +1,7 @@
 use v6;
 
 class GGE::Exp {}
+
 class GGE::Exp::Quant is GGE::Exp {
     has $.type    is rw;
     has $.ratchet is rw;
@@ -10,4 +11,6 @@ class GGE::Exp::Quant is GGE::Exp {
     has $.reps    is rw;
 }
 
-
+class GGE::Exp::CCShortcut is GGE::Exp {
+    has $.type;
+}

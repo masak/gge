@@ -14,6 +14,9 @@ class GGE::Perl6Regex {
     }
 
     sub matches($string, $pos, $pattern) {
+        $pattern ~~ GGE::Exp::CCShortcut
+            ?? $string.substr($pos, 1) eq ' '
+            !!
         $pattern eq '.'
             ?? $pos < $string.chars
             !! $string.substr($pos, $pattern.chars) eq $pattern;
@@ -95,9 +98,13 @@ class GGE::Perl6Regex {
                 ++$rxpos;
                 next;
             }
+            elsif self.p($rxpos, '\\s') {
+                $term = GGE::Exp::CCShortcut.new(:type<s>);
+                $rxpos += 2;
+            }
             else {
                 $term = $!pattern.substr($rxpos, 1);
-                $rxpos++;
+                ++$rxpos;
             }
             push @terms, $term;
         }
