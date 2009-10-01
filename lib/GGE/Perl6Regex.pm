@@ -15,17 +15,23 @@ class GGE::Perl6Regex {
 
     sub matches($string, $pos is rw, $pattern) {
         if $pattern ~~ GGE::Exp::CCShortcut {
-            if $string.substr($pos, 1) eq ' ' {
+            if $pattern.type eq 's' && $string.substr($pos, 1) eq ' ' {
+                ++$pos;
+                return True;
+            }
+            elsif $pattern.type eq 'S' && $pos < $string.chars
+                  && $string.substr($pos, 1) ne ' ' {
                 ++$pos;
                 return True;
             }
         }
         else {
+            if $pos >= $string.chars {
+                return False;
+            }
             if $pattern eq '.' {
-                if $pos < $string.chars {
-                    ++$pos;
-                    return True;
-                }
+                ++$pos;
+                return True;
             }
             else {
                 if $string.substr($pos, $pattern.chars) eq $pattern {
@@ -113,8 +119,9 @@ class GGE::Perl6Regex {
                 ++$rxpos;
                 next;
             }
-            elsif self.p($rxpos, '\\s') {
-                $term = GGE::Exp::CCShortcut.new(:type<s>);
+            elsif self.p($rxpos, '\\s'|'\\S') {
+                my $type = $!pattern.substr($rxpos + 1, 1);
+                $term = GGE::Exp::CCShortcut.new(:$type);
                 $rxpos += 2;
             }
             else {
@@ -128,9 +135,9 @@ class GGE::Perl6Regex {
             my $termindex = 0;
             my $backtracking = False;
             my &DEBUG = $debug
-                            ?? -> *@m { $*ERR.say |@m,
-                                                  " at index $termindex,",
-                                                  " position $to" }
+                            ?? -> *@m { say |@m,
+                                            " at index $termindex,",
+                                            " position $to" }
                             !! -> *@m { #`[debugging off] };
             while 0 <= $termindex < +@terms {
                 given @terms[$termindex] {
