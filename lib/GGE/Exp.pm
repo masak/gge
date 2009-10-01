@@ -9,6 +9,7 @@ class GGE::Exp::Quant is GGE::Exp {
     has $.max     is rw;
     has $.expr    is rw;
     has $.reps    is rw;
+    has @.marks   is rw;
 }
 
 class GGE::Exp::CCShortcut is GGE::Exp {

@@ -13,13 +13,28 @@ class GGE::Perl6Regex {
         $!pattern.substr($pos, $substr.chars) eq $substr;
     }
 
-    sub matches($string, $pos, $pattern) {
-        $pattern ~~ GGE::Exp::CCShortcut
-            ?? $string.substr($pos, 1) eq ' '
-            !!
-        $pattern eq '.'
-            ?? $pos < $string.chars
-            !! $string.substr($pos, $pattern.chars) eq $pattern;
+    sub matches($string, $pos is rw, $pattern) {
+        if $pattern ~~ GGE::Exp::CCShortcut {
+            if $string.substr($pos, 1) eq ' ' {
+                ++$pos;
+                return True;
+            }
+        }
+        else {
+            if $pattern eq '.' {
+                if $pos < $string.chars {
+                    ++$pos;
+                    return True;
+                }
+            }
+            else {
+                if $string.substr($pos, $pattern.chars) eq $pattern {
+                    $pos += $pattern.chars;
+                    return True;
+                }
+            }
+        }
+        return False;
     }
 
     submethod parse-backtracking-modifiers($rxpos is rw, $quant) {
@@ -113,16 +128,15 @@ class GGE::Perl6Regex {
             my $termindex = 0;
             my $backtracking = False;
             my &DEBUG = $debug
-                            ?? -> *@m { say |@m,
-                                            " at index $termindex,",
-                                            " position $to" }
+                            ?? -> *@m { $*ERR.say |@m,
+                                                  " at index $termindex,",
+                                                  " position $to" }
                             !! -> *@m { #`[debugging off] };
             while 0 <= $termindex < +@terms {
                 given @terms[$termindex] {
                     when Str {
                         if matches($target, $to, $_) {
                             DEBUG "Matched '$_'";
-                            $to += .chars;
                             DEBUG 'Proceeding';
                             $termindex++;
                         }
@@ -136,14 +150,17 @@ class GGE::Perl6Regex {
                     unless $backtracking {
                         .reps = 0;
                     }
-                    my $l = .expr.chars;
                     # RAKUDO: Must do this because there are no labels
                     my $failed = False;
                     while .reps < .min && !$failed {
+                        my $old-to = $to;
                         if matches($target, $to, .expr) {
                             DEBUG q[Matched '], .expr, q['];
-                            $to += $l;
                             .reps++;
+                        # RAKUDO: Have to change the value non-destructively
+                        #         so that it, and not a reference to it gets
+                        #         stored in the array
+                            .marks.push($old-to + 0);
                         }
                         else {
                             DEBUG 'Failed to match ', .expr;
@@ -166,8 +183,8 @@ class GGE::Perl6Regex {
                         elsif .type eq 'greedy' {
                             # we were too greedy, so try to back down one
                             if .reps > .min {
-                                DEBUG "Backing left $l steps";
-                                $to -= $l;
+                                $to = .marks.pop();
+                                DEBUG "Backing left";
                                 .reps--;
                             }
                             else {
@@ -179,8 +196,7 @@ class GGE::Perl6Regex {
                         else { # we were too eager, so try to add one
                             if .reps < .max
                                && matches($target, $to, .expr) {
-                                DEBUG "Backing right $l steps";
-                                $to += $l;
+                                DEBUG "Backing right";
                                 .reps++;
                             }
                             else {
@@ -193,11 +209,16 @@ class GGE::Perl6Regex {
                         $backtracking = False;
                     }
                     elsif .type eq 'greedy' {
+                        my $old-to = $to;
                         while .reps < .max
                               && matches($target, $to, .expr) {
                             DEBUG q[Matched '], .expr, q['];
-                            $to += $l;
                             .reps++;
+                        # RAKUDO: Have to change the value non-destructively
+                        #         so that it, and not a reference to it gets
+                        #         stored in the array
+                            .marks.push($old-to + 0);
+                            $old-to = $to;
                         }
                     }
                     DEBUG 'Proceeding';
