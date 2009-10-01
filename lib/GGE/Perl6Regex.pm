@@ -26,7 +26,8 @@ class GGE::Perl6Regex {
             }
         }
         elsif $pattern ~~ GGE::Exp::Anchor {
-            return $pos == 0;
+            return $pattern.type eq '^' && $pos == 0
+                || $pattern.type eq '$' && $pos == $string.chars;
         }
         else {
             if $pos >= $string.chars {
@@ -127,8 +128,8 @@ class GGE::Perl6Regex {
                 $term = GGE::Exp::CCShortcut.new(:$type);
                 $rxpos += 2;
             }
-            elsif self.p($rxpos, '^') {
-                my $type = $!pattern.substr($rxpos + 1, 1);
+            elsif self.p($rxpos, '^'|'$') {
+                my $type = $!pattern.substr($rxpos, 1);
                 $term = GGE::Exp::Anchor.new(:$type);
                 ++$rxpos;
             }
