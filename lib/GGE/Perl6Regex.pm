@@ -25,6 +25,9 @@ class GGE::Perl6Regex {
                 return True;
             }
         }
+        elsif $pattern ~~ GGE::Exp::Anchor {
+            return $pos == 0;
+        }
         else {
             if $pos >= $string.chars {
                 return False;
@@ -124,6 +127,11 @@ class GGE::Perl6Regex {
                 $term = GGE::Exp::CCShortcut.new(:$type);
                 $rxpos += 2;
             }
+            elsif self.p($rxpos, '^') {
+                my $type = $!pattern.substr($rxpos + 1, 1);
+                $term = GGE::Exp::Anchor.new(:$type);
+                ++$rxpos;
+            }
             else {
                 $term = $!pattern.substr($rxpos, 1);
                 ++$rxpos;
@@ -135,19 +143,28 @@ class GGE::Perl6Regex {
             my $termindex = 0;
             my $backtracking = False;
             my &DEBUG = $debug
-                            ?? -> *@m { say |@m,
-                                            " at index $termindex,",
-                                            " position $to" }
+                            ?? -> *@m { $*ERR.say: |@m,
+                                                   " at index $termindex,",
+                                                   " position $to" }
                             !! -> *@m { #`[debugging off] };
+            my @marks;
             while 0 <= $termindex < +@terms {
                 given @terms[$termindex] {
-                    when Str {
+                    when Str|GGE::Exp::Anchor {
+                        if $backtracking {
+                            $to = @marks.pop();
+                            $termindex--;
+                            next;
+                        }
+                        my $old-to = $to;
                         if matches($target, $to, $_) {
                             DEBUG "Matched '$_'";
                             DEBUG 'Proceeding';
                             $termindex++;
+                            @marks.push($old-to + 0);
                         }
                         else {
+                            DEBUG 'Failed to match ', $_;
                             DEBUG 'Turning on backtracking';
                             $backtracking = True;
                             $termindex--;
