@@ -1,6 +1,7 @@
 use v6;
 use GGE::Match;
 use GGE::Exp;
+use GGE::Cursor;
 
 class GGE::Perl6Regex {
     has $!pattern;
@@ -141,116 +142,46 @@ class GGE::Perl6Regex {
         }
         for ^$target.chars -> $from {
             my $to = $from;
-            my $termindex = 0;
-            my $backtracking = False;
+            my $old-to;
             my &DEBUG = $debug
                             ?? -> *@m { $*ERR.say: |@m,
-                                                   " at index $termindex,",
-                                                   " position $to" }
+                                                   " at positions $old-to..$to"
+                                      }
                             !! -> *@m { #`[debugging off] };
-            my @marks;
-            while 0 <= $termindex < +@terms {
-                given @terms[$termindex] {
+            my GGE::Cursor $c .= new(@terms, $target);
+            while $c.is-active {
+                $old-to = $to;
+                given $c.current-term {
                     when Str|GGE::Exp::Anchor {
-                        if $backtracking {
-                            $to = @marks.pop();
-                            $termindex--;
-                            next;
-                        }
-                        my $old-to = $to;
                         if matches($target, $to, $_) {
-                            DEBUG "Matched '$_'";
-                            DEBUG 'Proceeding';
-                            $termindex++;
-                            @marks.push($old-to + 0);
+                            DEBUG "Matched {$_ ~~ Str ?? "'$_'" !! $_}";
+                            $c.proceed;
                         }
                         else {
-                            DEBUG 'Failed to match ', $_;
-                            DEBUG 'Turning on backtracking';
-                            $backtracking = True;
-                            $termindex--;
-                            next;
+                            DEBUG 'Failed to match ', $_, ', backtracking';
+                            $to = $c.backtrack();
                         }
                     }
-                    unless $backtracking {
-                        .reps = 0;
-                    }
-                    # RAKUDO: Must do this because there are no labels
-                    my $failed = False;
-                    while .reps < .min && !$failed {
-                        my $old-to = $to;
-                        if matches($target, $to, .expr) {
-                            DEBUG q[Matched '], .expr, q['];
-                            .reps++;
-                        # RAKUDO: Have to change the value non-destructively
-                        #         so that it, and not a reference to it gets
-                        #         stored in the array
-                            .marks.push($old-to + 0);
+                    when GGE::Exp::Quant {
+                        if !$c.is-backtracking {
+                            $c.push($to);
+                        }
+                        if defined ($to = $c.get) {
+                            DEBUG "Matched {$_ ~~ Str ?? "'$_'" !! $_}";
+                            $c.proceed;
                         }
                         else {
-                            DEBUG 'Failed to match ', .expr;
-                            .reps = 0;
-                            $failed = True;
+                            DEBUG 'Failed to match ', $_, ', backtracking';
+                            $c.backtrack();
                         }
                     }
-                    if $failed {
-                        DEBUG 'Turning on backtracking';
-                        $backtracking = True;
-                        $termindex--;
-                        next;
+                    default {
+                        die "Unknown expression type {.WHAT}";
                     }
-                    if $backtracking {
-                        if .ratchet {
-                            DEBUG 'Failed to match';
-                            $termindex = -1;
-                            last;
-                        }
-                        elsif .type eq 'greedy' {
-                            # we were too greedy, so try to back down one
-                            if .reps > .min {
-                                $to = .marks.pop();
-                                DEBUG "Backing left";
-                                .reps--;
-                            }
-                            else {
-                                DEBUG 'Retreating';
-                                $termindex--;
-                                next;
-                            }
-                        }
-                        else { # we were too eager, so try to add one
-                            if .reps < .max
-                               && matches($target, $to, .expr) {
-                                DEBUG "Backing right";
-                                .reps++;
-                            }
-                            else {
-                                DEBUG 'Retreating';
-                                $termindex--;
-                                next;
-                            }
-                        }
-                        DEBUG 'Turning off backtracking';
-                        $backtracking = False;
-                    }
-                    elsif .type eq 'greedy' {
-                        my $old-to = $to;
-                        while .reps < .max
-                              && matches($target, $to, .expr) {
-                            DEBUG q[Matched '], .expr, q['];
-                            .reps++;
-                        # RAKUDO: Have to change the value non-destructively
-                        #         so that it, and not a reference to it gets
-                        #         stored in the array
-                            .marks.push($old-to + 0);
-                            $old-to = $to;
-                        }
-                    }
-                    DEBUG 'Proceeding';
-                    $termindex++;
                 }
             }
-            if $termindex == +@terms {
+            if $c.succeeded {
+                $old-to = $from;
                 DEBUG 'Match complete';
                 return GGE::Match.new(:$target, :$from, :$to);
             }
