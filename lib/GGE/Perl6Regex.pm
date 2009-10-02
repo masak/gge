@@ -14,40 +14,6 @@ class GGE::Perl6Regex {
         $!pattern.substr($pos, $substr.chars) eq $substr;
     }
 
-    sub matches($string, $pos is rw, $pattern) {
-        if $pattern ~~ GGE::Exp::CCShortcut {
-            if $pattern.type eq 's' && $string.substr($pos, 1) eq ' ' {
-                ++$pos;
-                return True;
-            }
-            elsif $pattern.type eq 'S' && $pos < $string.chars
-                  && $string.substr($pos, 1) ne ' ' {
-                ++$pos;
-                return True;
-            }
-        }
-        elsif $pattern ~~ GGE::Exp::Anchor {
-            return $pattern.type eq '^' && $pos == 0
-                || $pattern.type eq '$' && $pos == $string.chars;
-        }
-        else {
-            if $pos >= $string.chars {
-                return False;
-            }
-            if $pattern eq '.' {
-                ++$pos;
-                return True;
-            }
-            else {
-                if $string.substr($pos, $pattern.chars) eq $pattern {
-                    $pos += $pattern.chars;
-                    return True;
-                }
-            }
-        }
-        return False;
-    }
-
     submethod parse-backtracking-modifiers($rxpos is rw, $quant) {
         if self.p($rxpos, ':?') {
             $quant.ratchet = False;
@@ -135,7 +101,9 @@ class GGE::Perl6Regex {
                 ++$rxpos;
             }
             else {
-                $term = $!pattern.substr($rxpos, 1);
+                $term = GGE::Exp::Literal.new(
+                            :value($!pattern.substr($rxpos, 1))
+                        );
                 ++$rxpos;
             }
             push @terms, $term;
@@ -152,16 +120,6 @@ class GGE::Perl6Regex {
             while $c.is-active {
                 $old-to = $to;
                 given $c.current-term {
-                    when Str|GGE::Exp::Anchor {
-                        if matches($target, $to, $_) {
-                            DEBUG "Matched {$_ ~~ Str ?? "'$_'" !! $_}";
-                            $c.proceed;
-                        }
-                        else {
-                            DEBUG 'Failed to match ', $_, ', backtracking';
-                            $to = $c.backtrack();
-                        }
-                    }
                     when GGE::Exp::Quant {
                         if !$c.is-backtracking {
                             $c.push($to);
@@ -173,6 +131,16 @@ class GGE::Perl6Regex {
                         else {
                             DEBUG 'Failed to match ', $_, ', backtracking';
                             $c.backtrack();
+                        }
+                    }
+                    when GGE::Exp {
+                        if .matches($target, $to) {
+                            DEBUG "Matched {$_ ~~ Str ?? "'$_'" !! $_}";
+                            $c.proceed;
+                        }
+                        else {
+                            DEBUG 'Failed to match ', $_, ', backtracking';
+                            $to = $c.backtrack();
                         }
                     }
                     default {

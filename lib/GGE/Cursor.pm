@@ -15,41 +15,6 @@ has $!target;
 
 has @!marks;
 
-sub matches($string, $pos is rw, $pattern) {
-    if $pattern ~~ GGE::Exp::CCShortcut {
-        if $pattern.type eq 's' && $string.substr($pos, 1) eq ' ' {
-            ++$pos;
-            return True;
-        }
-        elsif $pattern.type eq 'S' && $pos < $string.chars
-              && $string.substr($pos, 1) ne ' ' {
-            ++$pos;
-            return True;
-        }
-    }
-    elsif $pattern ~~ GGE::Exp::Anchor {
-        return $pattern.type eq '^' && $pos == 0
-            || $pattern.type eq '$' && $pos == $string.chars;
-    }
-    else {
-        if $pos >= $string.chars {
-            return False;
-        }
-        if $pattern eq '.' {
-            ++$pos;
-            return True;
-        }
-        else {
-            if $string.substr($pos, $pattern.chars) eq $pattern {
-                $pos += $pattern.chars;
-                return True;
-            }
-        }
-    }
-    return False;
-}
-
-
 method new(@terms, $target) {
     die 'Must have at least one term'
         unless @terms;
@@ -71,7 +36,7 @@ method push($pos) {
         my &step;
         given $.current-term {
             while $reps < .min {
-                return undef unless matches($!target, $to, .expr);
+                return undef unless .expr.matches($!target, $to);
                 ++$reps;
             }
             my @positions;
@@ -79,7 +44,7 @@ method push($pos) {
                 while ++$reps <= .max {
                     # RAKUDO: Have to add zero (or eqiv) to the variable
                     @positions.push($to + 0);
-                    last unless matches($!target, $to, .expr);
+                    last unless .expr.matches($!target, $to);
                 }
             }
             &step = .ratchet
@@ -87,7 +52,7 @@ method push($pos) {
                 !!
             {
                 if .type eq 'eager' {
-                    ++$reps <= .max && matches($!target, $to, .expr)
+                    ++$reps <= .max && .expr.matches($!target, $to)
                       ?? ($to, &step)
                       !! undef;
                 }
