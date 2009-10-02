@@ -1,44 +1,46 @@
 == Glacial Grammar Engine -- like PGE, but slower
 
 Ok, so there was some guy called Patrick who implemented a thing called
-PGE, right? It was this grammar engine written in PIR, a low-level
-instruction code for Parrot, a multilingual VM specifically built for dynamic
-languages. PGE was the first thing in the known universe that could parse
-Perl 6 regexes. It was then plugged into PCT, a toolkit for building
-HLL (Higher-Level Language) compilers, and on top of that Rakudo, a Perl 6
-compiler, was built.
+PGE, right? It was this grammar engine written in PIR, the assembly
+language of Parrot. PGE was the first thing in the known universe that
+could parse Perl 6 regexes. It was then plugged into PCT, a toolkit for
+building HLL (Higher-Level Language) compilers for Parrot. Rakudo, a Perl 6
+compiler, was then built on top of PCT.
 
-In short, a whole lot of abstractions, and in the bottom of it all,
-driving the parser, sits PGE. Humming along, it does all the daily
-parsing we now take, more or less, for granted.
+In short, a whole lot of abstractions, and in the bottom of it all, driving
+the parser, sits PGE. Humming along, it does all the daily parsing we now
+take, more or less, for granted.
 
 Patrick was once caught saying that given the little time he had spent
-optimizing PGE, he was surprised it wasn't actually much slower.
-What he might not have guessed was that this off-hand statement could be
-read as a challenge: PGE surprisingly not slow enough? We know a number of
-ways to fix that...
+optimizing PGE, he was surprised it wasn't actually much slower.  What he
+might not have guessed was that this off-hand statement could be read as a
+challenge: PGE surprisingly not slow enough? We know a number of ways to
+fix that...
 
-GGE, the Glacial Grammar Engine, is a faithful port of PGE from PIR to
-Perl 6. It tries (albeit not too hard) to be implementation-independent,
-and it also attempts (though perhaps not too convincingly) to be a
-drop-in replacement for PGE. Most importantly, besides being written in
-Perl 6 rather than PIR, it brings one new essential feature to the table:
-it's slower. Much slower. Hence the name.
+GGE, the Glacial Grammar Engine, is a faithful port of PGE from PIR to Perl
+6. It tries (albeit not too hard) to be implementation-independent, and it
+also attempts (though perhaps not too convincingly) to be a drop-in
+replacement for PGE. Most importantly, besides being written in Perl 6
+rather than PIR, it brings one new essential feature to the table: it's
+slower. Much slower. Hence the name.
 
-The "albeit not too hard" reservation to the implementation-dependence stems
-from the fact that some PIR tricks used by PGE are unavailable in Perl 6. When
-faced with a choice of (a) giving up, and (b) cheating by introducing some
-PIR-dependent workaround, the implementor of GGE will choose the latter road.
+The "albeit not too hard" reservation to the implementation-independence
+stems from the fact that some PIR tricks used by PGE are unavailable in
+Perl 6. When faced with a choice of (a) giving up, and (b) cheating by
+introducing some PIR-dependent workaround, the implementor of GGE will
+choose the latter road. That said, implementation-independence stands as
+a goal whenever possible, just as with all honest Perl 6 code.
 
-The "though perhaps not too convincingly" reservation to GGE attempting to be a
-drop-in replacement for PGE stems from the fact that now that regular
-expressions _are_ in fact available in the Perl 6 language (through PGE), it
-would be a shame not to use them. Of course, it would be a fun challenge to
-restrict the writing of GGE to a mere subset of Perl 6 -- one not using any
-regexes at all, directly or indirectly -- but that is not the kind of fun
-optimized for in this case. Future teams of developers are welcome to
-optimize for that kind of fun, should they wish.
+The "though perhaps not too convincingly" reservation to GGE attempting to
+be a drop-in replacement for PGE stems from the fact that now that regular
+expressions _are_ in fact available in the Perl 6 language (through PGE),
+it's sometimes too tempting not to use them. Of course, it would be a fun
+challenge in itself to restrict the writing of GGE to a strict subset of
+Perl 6 -- one not using any regexes at all, directly or indirectly -- but
+that is not the kind of fun optimized for in this case. Future teams of
+developers are welcome to optimize for that kind of fun, should they wish.
 
 == License
 
-Code coming from the Parrot repository is Artistic License 2.0. See LICENSE.
+Code coming from the Parrot repository is Artistic License 2.0. See
+LICENSE.
