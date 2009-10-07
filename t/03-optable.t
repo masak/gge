@@ -7,7 +7,10 @@ use GGE::Perl6Regex;
 
 my GGE::OPTable $optable .= new;
 
-my &ident = &GGE::Match::ident;
+# RAKUDO: I initially called the variable &ident because that's nicer, but
+#         that triggered the Parrot bug wherein methods in a class collide
+#         with routines outside of it. So $ident it is.
+my $ident = &GGE::Match::ident;
 my $arrow = GGE::Perl6Regex.new("'->' <ident>");
 for ['infix:+',           precedence => '='                           ],
     ['infix:-',           equiv      => 'infix:+'                     ],
@@ -23,7 +26,7 @@ for ['infix:+',           precedence => '='                           ],
     ['postfix:++',        equiv      => 'prefix:++'                   ],
     ['postfix:--',        equiv      => 'prefix:++'                   ],
     ['prefix:-',          equiv      => 'prefix:++'                   ],
-    ['term:',             tighter    => 'prefix:++', :parsed(&ident)  ],
+    ['term:',             tighter    => 'prefix:++', :parsed($ident)  ],
     ['circumfix:( )',     equiv      => 'term:'                       ],
     ['circumfix:[ ]',     equiv      => 'term:'                       ],
     ['postcircumfix:( )', looser     => 'term:', :nullterm,  :nows    ],
@@ -124,8 +127,10 @@ sub tree($match) {
     return 'null' if $match ~~ '';
     my $r = $match<type>;
     given $match<type> {
-        when 'term:'   { $r ~= $match }
-        when 'term:->' { $r ~= $match<ident> }
+        # RAKUDO: Removing the semicolon below causes a runtime error
+        when 'term:'   { ; $r ~= $match }
+        # RAKUDO: Removing the line-ending semicolon causes a parse error.
+        when 'term:->' { $r ~= $match<ident> };
         $r ~= '(' ~ (map { tree($_) }, $match.llist) ~ ')';
     }
     return $r;
