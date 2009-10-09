@@ -10,6 +10,16 @@ class GGE::OPTable {
     has %!tokens;
 
     method newtok($name, *%opts) {
+        if %opts<equiv> -> $t {
+            %opts<precedence> = %!tokens{$t}<precedence>;
+            %opts<assoc> = %!tokens{$t}<assoc>;
+        }
+        elsif %opts<looser> -> $t {
+            %opts<precedence> = %!tokens{$t}<precedence> ~ '<';
+        }
+        elsif %opts<tighter> -> $t {
+            %opts<precedence> = %!tokens{$t}<precedence> ~ '>';
+        }
         %opts<assoc> //= 'left';
         %!tokens{$name} = %opts;
     }
@@ -45,7 +55,15 @@ class GGE::OPTable {
                     my $name = $key.substr(6);
                     if $text.substr($pos, $name.chars) eq $name {
                         if @operstack {
-                            reduce;
+                            my $top = @operstack[*-1];
+                            my $toptype = $top<type>;
+                            my $topprec = %!tokens{$toptype}<precedence>;
+                            my $prec = %!tokens{$key}<precedence>;
+                            my $topassoc = %!tokens{$toptype}<assoc>;
+                            if $topprec gt $prec
+                               || $topprec eq $prec && $topassoc eq 'left' {
+                                reduce;
+                            }
                         }
                         my $op = GGE::Match.new(:from($pos),
                                                 :to($pos + $name.chars),
