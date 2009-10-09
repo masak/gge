@@ -131,7 +131,7 @@ sub tree($match) {
         when 'term:'   { ; $r ~= $match }
         # RAKUDO: Removing the line-ending semicolon causes a parse error.
         when 'term:->' { $r ~= $match<ident> };
-        $r ~= '(' ~ (map { tree($_) }, $match.llist) ~ ')';
+        $r ~= '(' ~ (join ', ', map { tree($_) }, $match.llist) ~ ')';
     }
     return $r;
 }
