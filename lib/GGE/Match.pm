@@ -9,9 +9,10 @@ class Store {
 
 class GGE::Match {
     has $.target;
-    has $.from = 0;
+    has $.from is rw = 0;
     has $.to is rw = 0;
     has $!store = Store.new;
+    has @!submatches;
 
     # RAKUDO: Shouldn't need this
     multi method new(*%_) {
@@ -41,8 +42,17 @@ class GGE::Match {
     #         class to put the problematic hash lookup out of reach.
     method postcircumfix:<{ }>($key) { $!store.access($key) }
 
+    method push($submatch) {
+        @!submatches.push($submatch);
+    }
+
+    method llist() {
+        @!submatches
+    }
+
     method ident() {
         my $mob = self.new(self);
+        $mob.from = self.to;
         my $target = $mob.target;
         my $pos = $mob.to;
         if $target.substr($pos, 1) ~~ /<alpha>/ {

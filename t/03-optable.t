@@ -128,9 +128,7 @@ sub tree($match) {
     my $r = $match<type>;
     given $match<type> {
         # RAKUDO: Removing the semicolon below causes a runtime error
-        when 'term:'   { ; $r ~= $match }
-        # RAKUDO: Removing the line-ending semicolon causes a parse error.
-        when 'term:->' { $r ~= $match<ident> };
+        when 'term:'   { ; $r ~= $match };
         $r ~= '(' ~ (join ', ', map { tree($_) }, $match.llist) ~ ')';
     }
     return $r;
