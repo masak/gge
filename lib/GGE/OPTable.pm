@@ -199,7 +199,7 @@ class GGE::OPTable {
             }
             $m.to = $pos;
         }
-        if !@termstack {
+        if !@termstack || $circumnest > 0 {
             $m.to = -1;
         }
         else {
@@ -213,14 +213,14 @@ class GGE::OPTable {
                 reduce;
             }
         }
-        if !@termstack {
-            $m.to = -1;
-        }
-        else {
+        if @termstack {
             $m<expr> = @termstack[0];
             if $pos <= 0 {
                 $m.to = @termstack[0].to;
             }
+        }
+        else {
+            $m.to = -1;
         }
         $m
     }
