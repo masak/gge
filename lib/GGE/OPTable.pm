@@ -8,6 +8,8 @@ class GGE::OPTable {
     constant GGE_OPTABLE_EXPECT_OPER = 0x02;
 
     has %!tokens;
+    has %!keys;
+    has %!klen;
 
     method newtok($name, *%opts) {
         if %opts<equiv> -> $t {
@@ -21,7 +23,19 @@ class GGE::OPTable {
             %opts<precedence> = %!tokens{$t}<precedence> ~ '>';
         }
         %opts<assoc> //= 'left';
+        %opts<name> = $name;
         %!tokens{$name} = %opts;
+
+        my $key = $name.substr($name.index(':') + 1);
+        my $keylen = $key.chars;
+        my $key_firstchar = $key.substr(0, 1);
+        # RAKUDO: max=
+        if %!klen{$key_firstchar} // -Inf < $keylen {
+            %!klen{$key_firstchar} = $keylen;
+        }
+
+        # RAKUDO: Comma after %opts shouldn't be necessary
+        (%!keys{$key} //= []).push({%opts,});
     }
 
     method parse($text, *%opts) {
@@ -64,26 +78,30 @@ class GGE::OPTable {
             $pos++ while $text.substr($pos, 1) ~~ /\s/;
             my $last_pos = $pos;
             my $stop_matching = False;
-            for %!tokens.keys -> $key {
-                if %!tokens{$key}.exists('parsed') {
-                    my $routine = %!tokens{$key}<parsed>;
-                    my $oper = $routine($m);
-                    if $oper.to > $pos {
-                        unless $expect +& GGE_OPTABLE_EXPECT_TERM {
-                            $stop_matching = True;
+            my $key_firstchar = $text.substr($pos, 1);
+            my $maxlength = %!klen{$key_firstchar} // 0;
+            my $key = $text.substr($pos, $maxlength);
+            my $found_oper = False;
+            loop {
+                for (%!keys{$key} // []).list -> $token {
+                    my $name = $token<name>;
+                    if $token.exists('parsed') {
+                        my $routine = $token<parsed>;
+                        my $oper = $routine($m);
+                        if $oper.to > $pos {
+                            unless $expect +& GGE_OPTABLE_EXPECT_TERM {
+                                $stop_matching = True;
+                                last;
+                            }
+                            $pos = $oper.to;
+                            $oper<type> = $name;
+                            push @termstack, $oper;
+                            $expect = GGE_OPTABLE_EXPECT_OPER;
+                            $found_oper = True;
                             last;
                         }
-                        $pos = $oper.to;
-                        $oper<type> = $key;
-                        push @termstack, $oper;
-                        $expect = GGE_OPTABLE_EXPECT_OPER;
-                        last;
                     }
-                }
-                if $expect +& GGE_OPTABLE_EXPECT_OPER
-                   && $key.substr(0, 6) eq 'infix:' {
-                    my $name = $key.substr(6);
-                    if $text.substr($pos, $name.chars) eq $name {
+                    if $expect +& GGE_OPTABLE_EXPECT_OPER {
                         if @operstack {
                             my $top = @operstack[*-1];
                             my $toptype = $top<type>;
@@ -91,17 +109,21 @@ class GGE::OPTable {
                             #      equals signs is kind of a hack.
                             my $topprec = %!tokens{$toptype}<precedence>
                                           ~ '=' x 100;
-                            my $prec = %!tokens{$key}<precedence> ~ '=' x 100;
+                            my $prec = %!tokens{$name}<precedence> ~ '=' x 100;
                             my $topassoc = %!tokens{$toptype}<assoc>;
                             if $topprec gt $prec
                                || $topprec eq $prec && $topassoc ne 'right' {
                                 reduce;
                             }
                         }
-                        shift_oper($key);
+                        shift_oper($name);
+                        $found_oper = True;
                         last;
                     }
                 }
+                last if $found_oper;
+                last if $key eq '';
+                $key .= chop();
             }
             if $stop_matching || $last_pos == $pos {
                 last;
