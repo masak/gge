@@ -11,7 +11,19 @@ class GGE::OPTable {
     has %!keys;
     has %!klen;
 
+    has %!sctable =
+            'term:'          => { expect => 0x0201             },
+            'postfix:'       => { expect => 0x0202, arity => 1 },
+            'prefix:'        => { expect => 0x0101, arity => 1 },
+            'infix:'         => { expect => 0x0102, arity => 2 },
+    ;
+
     method newtok($name, *%opts) {
+        my $category = $name.substr(0, $name.index(':') + 1);
+        if %!sctable{$category} -> %defaults {
+            %opts{$_} //= %defaults{$_} for %defaults.keys;
+        }
+
         if %opts<equiv> -> $t {
             %opts<precedence> = %!tokens{$t}<precedence>;
             %opts<assoc> = %!tokens{$t}<assoc>;
@@ -44,7 +56,7 @@ class GGE::OPTable {
         my (@termstack, @tokenstack, @operstack);
         my $expect = GGE_OPTABLE_EXPECT_TERM;
         my &shift_oper = -> $key {
-            my $name = $key.substr(6);
+            my $name = $key.substr($key.index(':') + 1);
             my $op = GGE::Match.new(:from($pos),
                                     :to($pos + $name.chars),
                                     :target($text));
@@ -52,15 +64,20 @@ class GGE::OPTable {
             push @tokenstack, $op;
             push @operstack, $op;
             $pos = $op.to;
-            $expect = GGE_OPTABLE_EXPECT_TERM;
+            $expect = %!tokens{$key}<expect> +> 8;
         };
         my &reduce = {
             pop @tokenstack;
             my $oper = pop @operstack;
-            my @temp = pop(@termstack), pop(@termstack);
+            my @temp;
+            my $arity = %!tokens{$oper<type>}<arity>;
+            for ^$arity {
+                @temp.push(pop(@termstack));
+            }
             if ?@temp[0] {
-                $oper.push( @temp[1] );
-                $oper.push( @temp[0] );
+                for reverse ^$arity {
+                    $oper.push( @temp[$_] );
+                }
                 if %!tokens{$oper<type>}<assoc> eq 'list'
                    && $oper<type> eq @temp[1]<type> {
 
@@ -89,19 +106,19 @@ class GGE::OPTable {
                         my $routine = $token<parsed>;
                         my $oper = $routine($m);
                         if $oper.to > $pos {
-                            unless $expect +& GGE_OPTABLE_EXPECT_TERM {
+                            unless $expect +& $token<expect> {
                                 $stop_matching = True;
                                 last;
                             }
                             $pos = $oper.to;
                             $oper<type> = $name;
                             push @termstack, $oper;
-                            $expect = GGE_OPTABLE_EXPECT_OPER;
+                            $expect = $token<expect> +> 8;
                             $found_oper = True;
                             last;
                         }
                     }
-                    if $expect +& GGE_OPTABLE_EXPECT_OPER {
+                    if $expect +& $token<expect> {
                         if @operstack {
                             my $top = @operstack[*-1];
                             my $toptype = $top<type>;
