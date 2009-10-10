@@ -1,6 +1,7 @@
 use v6;
 
 use GGE::Match;
+use GGE::Perl6Regex;
 
 class GGE::OPTable {
     # RAKUDO: Must define these within the class for them to be visible.
@@ -88,7 +89,10 @@ class GGE::OPTable {
                 push @termstack, $oper;
             }
             else {
-                push @termstack, @temp[1];
+                # Not sure about this one...
+                for 1..^$arity {
+                    push @termstack, @temp[$_];
+                }
                 $pos = -1;
             }
         };
@@ -105,6 +109,10 @@ class GGE::OPTable {
                     my $name = $token<name>;
                     if $token.exists('parsed') {
                         my $routine = $token<parsed>;
+                        if $routine ~~ GGE::Perl6Regex {
+                            # We don't do this trick yet :/
+                            last;
+                        }
                         my $oper = $routine($m);
                         if $oper.to > $pos {
                             unless $expect +& $token<expect> {
@@ -119,7 +127,7 @@ class GGE::OPTable {
                             last;
                         }
                     }
-                    if $expect +& $token<expect> {
+                    elsif $expect +& $token<expect> {
                         if @operstack {
                             my $top = @operstack[*-1];
                             my $toptype = $top<type>;
@@ -157,9 +165,14 @@ class GGE::OPTable {
         while @tokenstack >= 1 {
             reduce;
         }
-        $m<expr> = @termstack[0];
-        if $pos <= 0 {
-            $m.to = @termstack[0].to;
+        if !@termstack {
+            $m.to = -1;
+        }
+        else {
+            $m<expr> = @termstack[0];
+            if $pos <= 0 {
+                $m.to = @termstack[0].to;
+            }
         }
         $m
     }
