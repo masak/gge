@@ -46,7 +46,6 @@ class GGE::OPTable {
             my @temp = pop(@termstack), pop(@termstack);
             $oper.push( @temp[1] );
             $oper.push( @temp[0] );
-            say [$oper<type>, @temp[1]<type>].perl;
             if %!tokens{$oper<type>}<assoc> eq 'list'
                && $oper<type> eq @temp[1]<type> {
 
@@ -56,12 +55,18 @@ class GGE::OPTable {
             push @termstack, $oper;
         };
         while $pos < $text.chars {
+            $pos++ while $text.substr($pos, 1) ~~ /\s/;
             my $last_pos = $pos;
+            my $stop_matching = False;
             for %!tokens.keys -> $key {
                 if %!tokens{$key}.exists('parsed') {
                     my $routine = %!tokens{$key}<parsed>;
                     my $oper = $routine($m);
                     if $oper.to > $pos {
+                        unless $expect +& GGE_OPTABLE_EXPECT_TERM {
+                            $stop_matching = True;
+                            last;
+                        }
                         $pos = $oper.to;
                         $oper<type> = $key;
                         push @termstack, $oper;
@@ -91,8 +96,10 @@ class GGE::OPTable {
                     }
                 }
             }
+            if $stop_matching || $last_pos == $pos {
+                last;
+            }
             $m.to = $pos;
-            return $m if $last_pos == $pos;
         }
         while @operstack {
             reduce;
