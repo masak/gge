@@ -42,7 +42,8 @@ class GGE::OPTable {
         my $keylen = $key.chars;
         my $key_firstchar = $key.substr(0, 1);
         # RAKUDO: max=
-        if %!klen{$key_firstchar} // -Inf < $keylen {
+        if $key_firstchar && !%!klen.exists($key_firstchar)
+           || %!klen{$key_firstchar} < $keylen {
             %!klen{$key_firstchar} = $keylen;
         }
 
