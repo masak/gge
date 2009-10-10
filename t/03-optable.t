@@ -12,25 +12,26 @@ my GGE::OPTable $optable .= new;
 #         with routines outside of it. So $ident it is.
 my $ident = &GGE::Match::ident;
 my $arrow = GGE::Perl6Regex.new("'->' <ident>");
-for ['infix:+',           precedence => '='                           ],
-    ['infix:-',           equiv      => 'infix:+'                     ],
-    ['infix:*',           tighter    => 'infix:+'                     ],
-    ['infix:/',           equiv      => 'infix:*'                     ],
-    ['infix:**',          tighter    => 'infix:*'                     ],
-    ['infix:==',          looser     => 'infix:+'                     ],
-    ['infix:=',           looser     => 'infix:==', :assoc<right>     ],
-    ['infix:,',           tighter    => 'infix:=',  :assoc<list>      ],
-    ['infix:;',           looser     => 'infix:=',  :assoc<list>      ],
-    ['prefix:++',         tighter    => 'infix:**'                    ],
-    ['prefix:--',         equiv      => 'prefix:++'                   ],
-    ['postfix:++',        equiv      => 'prefix:++'                   ],
-    ['postfix:--',        equiv      => 'prefix:++'                   ],
-    ['prefix:-',          equiv      => 'prefix:++'                   ],
-    ['term:',             tighter    => 'prefix:++', :parsed($ident)  ],
-    ['circumfix:( )',     equiv      => 'term:'                       ],
-    ['circumfix:[ ]',     equiv      => 'term:'                       ],
-    ['postcircumfix:( )', looser     => 'term:', :nullterm,  :nows    ],
-    ['postcircumfix:[ ]', equiv      => 'postcircumfix:( )', :nows    ]
+for ['infix:+',           precedence => '='                                 ],
+    ['infix:-',           equiv      => 'infix:+'                           ],
+    ['infix:*',           tighter    => 'infix:+'                           ],
+    ['infix:/',           equiv      => 'infix:*'                           ],
+    ['infix:**',          tighter    => 'infix:*'                           ],
+    ['infix:==',          looser     => 'infix:+'                           ],
+    ['infix:=',           looser     => 'infix:==', :assoc<right>           ],
+    ['infix:,',           tighter    => 'infix:=',  :assoc<list>            ],
+    ['infix:;',           looser     => 'infix:=',  :assoc<list>            ],
+    ['prefix:++',         tighter    => 'infix:**'                          ],
+    ['prefix:--',         equiv      => 'prefix:++'                         ],
+    ['postfix:++',        equiv      => 'prefix:++'                         ],
+    ['postfix:--',        equiv      => 'prefix:++'                         ],
+    ['prefix:-',          equiv      => 'prefix:++'                         ],
+    ['term:',             tighter    => 'prefix:++', :parsed($ident)        ],
+    ['circumfix:( )',     equiv      => 'term:'                             ],
+    ['circumfix:[ ]',     equiv      => 'term:'                             ],
+    ['postcircumfix:( )', looser     => 'term:', :nullterm,  :nows          ],
+    ['postcircumfix:[ ]', equiv      => 'postcircumfix:( )', :nows          ],
+    ['term:->',           equiv      => 'term:', :!skipkey, :parsed($arrow) ]
 -> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'a',     'term:a',                                   'Simple term' );
@@ -67,6 +68,7 @@ optable_output_is( '++a', 'prefix:++(term:a)',  'prefix' );
 optable_output_is( '--a', 'prefix:--(term:a)',  'prefix' );
 
 optable_output_is( '-a',  'prefix:-(term:a)',   'prefix ltm');
+todo('Not ready to parse with Perl6Regex objects just yet');
 optable_output_is( '->a', 'term:->a',           'prefix ltm');
 
 optable_output_is(
@@ -129,6 +131,7 @@ sub tree($match) {
     given $match<type> {
         # RAKUDO: Removing the semicolon below causes a runtime error
         when 'term:'   { ; $r ~= $match };
+        when 'term->:' { ; $r ~= $match<ident> };
         $r ~= '(' ~ (join ', ', map { tree($_) }, $match.llist) ~ ')';
     }
     return $r;
