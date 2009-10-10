@@ -199,14 +199,19 @@ class GGE::OPTable {
             }
             $m.to = $pos;
         }
-        if $expect +& GGE_OPTABLE_EXPECT_TERM {
-            # insert a dummy term to make reduce work
-            push @termstack, GGE::Match.new(:from($pos),
-                                            :to($pos-1),
-                                            :target($text));
+        if !@termstack {
+            $m.to = -1;
         }
-        while @tokenstack >= 1 {
-            reduce;
+        else {
+            if $expect +& GGE_OPTABLE_EXPECT_TERM {
+                # insert a dummy term to make reduce work
+                push @termstack, GGE::Match.new(:from($pos),
+                                                :to($pos-1),
+                                                :target($text));
+            }
+            while @tokenstack >= 1 {
+                reduce;
+            }
         }
         if !@termstack {
             $m.to = -1;
