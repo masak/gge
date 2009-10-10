@@ -44,15 +44,21 @@ class GGE::OPTable {
             pop @tokenstack;
             my $oper = pop @operstack;
             my @temp = pop(@termstack), pop(@termstack);
-            $oper.push( @temp[1] );
-            $oper.push( @temp[0] );
-            if %!tokens{$oper<type>}<assoc> eq 'list'
-               && $oper<type> eq @temp[1]<type> {
+            if ?@temp[0] {
+                $oper.push( @temp[1] );
+                $oper.push( @temp[0] );
+                if %!tokens{$oper<type>}<assoc> eq 'list'
+                   && $oper<type> eq @temp[1]<type> {
 
-                @temp[1].push($oper.llist[1]);
-                $oper = @temp[1];
+                    @temp[1].push($oper.llist[1]);
+                    $oper = @temp[1];
+                }
+                push @termstack, $oper;
             }
-            push @termstack, $oper;
+            else {
+                push @termstack, @temp[1];
+                $pos = -1;
+            }
         };
         while $pos < $text.chars {
             $pos++ while $text.substr($pos, 1) ~~ /\s/;
@@ -74,7 +80,8 @@ class GGE::OPTable {
                         last;
                     }
                 }
-                if $key.substr(0, 6) eq 'infix:' {
+                if $expect +& GGE_OPTABLE_EXPECT_OPER
+                   && $key.substr(0, 6) eq 'infix:' {
                     my $name = $key.substr(6);
                     if $text.substr($pos, $name.chars) eq $name {
                         if @operstack {
@@ -101,10 +108,19 @@ class GGE::OPTable {
             }
             $m.to = $pos;
         }
-        while @operstack {
+        if $expect +& GGE_OPTABLE_EXPECT_TERM {
+            # insert a dummy term to make reduce work
+            push @termstack, GGE::Match.new(:from($pos),
+                                            :to($pos-1),
+                                            :target($text));
+        }
+        while @tokenstack >= 1 {
             reduce;
         }
         $m<expr> = @termstack[0];
+        if $pos <= 0 {
+            $m.to = @termstack[0].to;
+        }
         $m
     }
 }
