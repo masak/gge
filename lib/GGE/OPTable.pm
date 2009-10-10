@@ -20,13 +20,15 @@ class GGE::OPTable {
 
     has %!sctable =
             'term:'          => { syncat => GGE_OPTABLE_TERM,
-                                  expect => 0x0201             },
+                                  expect => 0x0201 },
             'postfix:'       => { syncat => GGE_OPTABLE_POSTFIX,
                                   expect => 0x0202, arity => 1 },
             'close:'         => { syncat => GGE_OPTABLE_CLOSE,
-                                  expect => 0x0202             },
+                                  expect => 0x0202 },
             'prefix:'        => { expect => 0x0101, arity => 1 },
             'infix:'         => { expect => 0x0102, arity => 2 },
+            'postcircumfix:' => { syncat => GGE_OPTABLE_POSTCIRCUMFIX,
+                                  expect => 0x0102, arity => 2 },
             'circumfix:'     => { syncat => GGE_OPTABLE_CIRCUMFIX,
                                   expect => 0x0101, arity => 1 },
     ;
