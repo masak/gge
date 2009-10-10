@@ -53,6 +53,7 @@ class GGE::OPTable {
         %!tokens{$name} = %opts;
         if defined (my $ix = $key.index(' ')) {
             my $keyclose = $key.substr($ix + 1);
+            %opts<keyclose> = $keyclose;
             $key .= substr(0, $ix);
             self.newtok("close:$keyclose", :equiv($name),
                         :expect(%opts<expectclose> // 0x0202),
@@ -159,13 +160,19 @@ class GGE::OPTable {
                             my $top = @tokenstack[*-1];
                             my $topcat = $top<syncat>;
                             if $token<syncat> == GGE_OPTABLE_CLOSE {
-                                unless $circumnest-- {
+                                unless $circumnest {
                                     $stop_matching = True;
                                     last;
                                 }
                                 if $topcat < GGE_OPTABLE_CIRCUMFIX {
                                     reduce;
                                 }
+                                $top = @tokenstack[*-1];
+                                if $top<keyclose> ne $key {
+                                    $stop_matching = True;
+                                    last;
+                                }
+                                --$circumnest;
                             }
                             elsif $topcat >= GGE_OPTABLE_POSTCIRCUMFIX {
                                 ++$circumnest;
