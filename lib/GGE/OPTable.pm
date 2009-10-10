@@ -75,6 +75,7 @@ class GGE::OPTable {
         my $m = GGE::Match.new(:target($text));
         my $pos = 0;
         my (@termstack, @tokenstack, @operstack);
+        my $circumnest = 0;
         my $expect = GGE_OPTABLE_EXPECT_TERM;
         my &shift_oper = -> $name, $key {
             my $op = GGE::Match.new(:from($pos),
@@ -158,11 +159,16 @@ class GGE::OPTable {
                             my $top = @tokenstack[*-1];
                             my $topcat = $top<syncat>;
                             if $token<syncat> == GGE_OPTABLE_CLOSE {
+                                unless $circumnest-- {
+                                    $stop_matching = True;
+                                    last;
+                                }
                                 if $topcat < GGE_OPTABLE_CIRCUMFIX {
                                     reduce;
                                 }
                             }
                             elsif $topcat >= GGE_OPTABLE_POSTCIRCUMFIX {
+                                ++$circumnest;
                                 # go directly to shift
                             }
                             else {
@@ -184,7 +190,7 @@ class GGE::OPTable {
                         last;
                     }
                 }
-                last if $found_oper;
+                last if $found_oper || $stop_matching;
                 last if $key eq '';
                 $key .= chop();
             }
