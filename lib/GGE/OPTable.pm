@@ -122,7 +122,9 @@ class GGE::OPTable {
             }
         };
         while $pos < $text.chars {
+            my $wspos = $pos;
             $pos++ while $text.substr($pos, 1) ~~ /\s/;
+            my $nows = $pos != $wspos;
             my $last_pos = $pos;
             my $stop_matching = False;
             my $key_firstchar = $text.substr($pos, 1);
@@ -157,7 +159,8 @@ class GGE::OPTable {
                             last;
                         }
                     }
-                    elsif $expect +& $token<expect> {
+                    elsif $expect +& $token<expect>
+                          && !($token<nows> && $nows) {
                         if @operstack {
                             my $top = @tokenstack[*-1];
                             my $topcat = $top<syncat>;
