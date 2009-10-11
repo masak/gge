@@ -47,21 +47,24 @@ method push($pos) {
                     last unless .expr.matches($!target, $to);
                 }
             }
+            # RAKUDO: The gather construct in Perl 6 promises to execute the
+            #         code before the next 'take' lazily, i.e. by-need.
+            #         In Rakudo, such laziness isn't implemented yet, so
+            #         we'll make use of a closure instead.
             &step = .ratchet
                 ?? { undef }
-                !!
-            {
-                if .type eq 'eager' {
-                    ++$reps <= .max && .expr.matches($!target, $to)
-                      ?? ($to, &step)
-                      !! undef;
-                }
-                elsif .type eq 'greedy' {
-                    @positions
-                        ?? (@positions.pop(), &step)
-                        !! undef;
-                }
-            };
+                !! .type eq 'eager'
+                    ?? {
+                           ++$reps <= .max && .expr.matches($!target, $to)
+                             ?? ($to, &step)
+                             !! undef;
+                       }
+                    !! {
+                           @positions
+                             ?? (@positions.pop(), &step)
+                             !! undef;
+                       }
+            ;
         }
         $to, &step
     }];
@@ -70,6 +73,8 @@ method push($pos) {
 method mark() { @!marks[*-1] }
 
 method get() {
+    # What's going on here? See the RAKUDO comment by the definition of &step
+    # above for an answer.
     (my $to), $.mark[1] = $.mark[1].();
     if !defined $.mark[1] {
         @!marks.pop;
