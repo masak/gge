@@ -97,35 +97,47 @@ class GGE::OPTable {
         my &reduce = {
             my $top = pop @tokenstack;
             my $oper = pop @operstack;
+            my $reduce = True;
             if $top<syncat> == GGE_OPTABLE_CLOSE {
                 $top = pop @tokenstack;
                 $oper = pop @operstack;
             }
-            my @temp;
-            my $arity = $top<arity>;
-            for ^$arity {
-                @temp.push(pop(@termstack));
-            }
-            # The POSTCIRCUMFIX condition here is worrying because there's
-            # nothing corresponding in PGE, as far as I can see. But the
-            # tests mandate it.
-            if $top<syncat> == GGE_OPTABLE_POSTCIRCUMFIX || ?@temp[0] {
-                for reverse ^$arity {
-                    $oper.push( @temp[$_] );
+            elsif $top<syncat> >= GGE_OPTABLE_POSTCIRCUMFIX {
+                pop @termstack;
+                $reduce = False;
+                if $top<syncat> == GGE_OPTABLE_CIRCUMFIX {
+                    push @termstack, GGE::Match.new(:from($pos),
+                                                    :to($pos-1),
+                                                    :target($text));
                 }
-                if $top<assoc> eq 'list' && $oper<type> eq @temp[1]<type> {
+            }
+            if $reduce {
+                my @temp;
+                my $arity = $top<arity>;
+                for ^$arity {
+                    @temp.push(pop(@termstack));
+                }
+                # The POSTCIRCUMFIX condition here is worrying because there's
+                # nothing corresponding in PGE, as far as I can see. But the
+                # tests mandate it.
+                if $top<syncat> == GGE_OPTABLE_POSTCIRCUMFIX || ?@temp[0] {
+                    for reverse ^$arity {
+                        $oper.push( @temp[$_] );
+                    }
+                    if $top<assoc> eq 'list' && $oper<type> eq @temp[1]<type> {
 
-                    @temp[1].push($oper.llist[1]);
-                    $oper = @temp[1];
+                        @temp[1].push($oper.llist[1]);
+                        $oper = @temp[1];
+                    }
+                    push @termstack, $oper;
                 }
-                push @termstack, $oper;
-            }
-            else {
-                # Not sure about this one...
-                for 1..^$arity {
-                    push @termstack, @temp[$_];
+                else {
+                    # Not sure about this one...
+                    for 1..^$arity {
+                        push @termstack, @temp[$_];
+                    }
+                    $pos = -1;
                 }
-                $pos = -1;
             }
         };
         while $pos < $text.chars {
@@ -229,17 +241,23 @@ class GGE::OPTable {
                 }
                 last if $found_oper || $stop_matching;
                 if $key eq '' {
-                    if $expect +& GGE_OPTABLE_EXPECT_TERM
-                       && @tokenstack && @tokenstack[*-1]<nullterm> {
-                        $expect = GGE_OPTABLE_EXPECT_OPER;
-                        # insert a dummy term to make reduce work
-                        push @termstack, GGE::Match.new(:from($pos),
-                                                        :to($pos-1),
-                                                        :target($text));
-                        # There might be better ways to restart the loop, but
-                        # let's do it this way for now.
-                        $key = $text.substr($pos, $maxlength);
-                        next;
+                    if $expect +& GGE_OPTABLE_EXPECT_TERM {
+                        if @tokenstack && @tokenstack[*-1]<nullterm> {
+                            $expect = GGE_OPTABLE_EXPECT_OPER;
+                            # insert a dummy term to make reduce work
+                            push @termstack, GGE::Match.new(:from($pos),
+                                                            :to($pos-1),
+                                                            :target($text));
+                            # There might be better ways to restart the loop,
+                            # but let's do it this way for now.
+                            $key = $text.substr($pos, $maxlength);
+                            next;
+                        }
+                        else {
+                            $pos = -1;
+                            $stop_matching = True;
+                            last;
+                        }
                     }
                     else {
                         last;
@@ -252,7 +270,7 @@ class GGE::OPTable {
             }
             $m.to = $pos;
         }
-        if !@termstack || $circumnest > 0 {
+        if !@termstack {
             $m.to = -1;
         }
         else {
@@ -266,7 +284,7 @@ class GGE::OPTable {
                 reduce;
             }
         }
-        if @termstack {
+        if @termstack && ?@termstack[0] {
             $m<expr> = @termstack[0];
             if $pos <= 0 {
                 $m.to = @termstack[0].to;
