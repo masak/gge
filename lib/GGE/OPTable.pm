@@ -82,6 +82,10 @@ class GGE::OPTable {
         my $m = GGE::Match.new(:target($text));
         my $pos = 0;
         my (@termstack, @tokenstack, @operstack);
+        my $stoptoken = %opts<stop> // '';
+        if $stoptoken.substr(0, 1) eq ' ' {
+            $stoptoken .= substr(1);
+        }
         my $circumnest = 0;
         my $expect = GGE_OPTABLE_EXPECT_TERM;
         my &shift_oper = -> $name, $key {
@@ -141,11 +145,16 @@ class GGE::OPTable {
             }
         };
         while $pos < $text.chars {
+            my $stop_matching = False;
+            if $text.substr($pos, $stoptoken.chars) eq $stoptoken
+               && $circumnest == 0 {
+                $stop_matching = True;
+                last;
+            }
             my $wspos = $pos;
             $pos++ while $text.substr($pos, 1) ~~ /\s/;
             my $nows = $pos != $wspos;
             my $last_pos = $pos;
-            my $stop_matching = False;
             my $key_firstchar = $text.substr($pos, 1);
             my $maxlength = %!klen{$key_firstchar} // 0;
             my $key = $text.substr($pos, $maxlength);
