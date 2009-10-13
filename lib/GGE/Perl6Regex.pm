@@ -4,77 +4,44 @@ use GGE::Exp;
 use GGE::Cursor;
 
 class GGE::Perl6Regex {
-    has $!pattern;
+    has @!terms;
 
     method new($pattern) {
-        return self.bless(*, :$pattern);
-    }
-
-    submethod p($pos, $substr) {
-        $!pattern.substr($pos, $substr.chars) eq $substr;
-    }
-
-    submethod parse-backtracking-modifiers($rxpos is rw, $quant) {
-        if self.p($rxpos, ':?') {
-            $quant.ratchet = False;
-            $quant.type = 'eager';
-            $rxpos += 2;
-        }
-        elsif self.p($rxpos, ':!') {
-            $quant.ratchet = False;
-            $rxpos += 2;
-        }
-        elsif self.p($rxpos, '?') {
-            $quant.ratchet = False;
-            $quant.type = 'eager';
-            ++$rxpos;
-        }
-        elsif self.p($rxpos, '!') {
-            $quant.ratchet = False;
-            ++$rxpos;
-        }
-        elsif self.p($rxpos, ':') {
-            $quant.ratchet = True;
-            ++$rxpos;
-        }
-    }
-
-    method postcircumfix:<( )>($target, :$debug) {
         my $rxpos = 0;
         my $ratchet = False;
         my @terms;
-        while $rxpos < $!pattern.chars {
+        while $rxpos < $pattern.chars {
             my $term;
-            if self.p($rxpos, ':ratchet') {
+            if p($pattern, $rxpos, ':ratchet') {
                 $ratchet = True;
                 $rxpos += 8;
                 next;
             }
-            elsif self.p($rxpos, '**') {
+            elsif p($pattern, $rxpos, '**') {
                 $term = GGE::Exp::Quant.new( :type<greedy>, :$ratchet,
                                              :expr(@terms.pop) );
                 $rxpos += 2;
-                self.parse-backtracking-modifiers($rxpos, $term);
+                parse-backtracking-modifiers($pattern, $rxpos, $term);
                 my $brackets = False;
-                if self.p($rxpos, '{') {
+                if p($pattern, $rxpos, '{') {
                     $brackets = True;
                     ++$rxpos;
                 }
                 # XXX: Need to generalize this into parsing several digits
-                $term.min = $term.max = $!pattern.substr($rxpos, 1);
+                $term.min = $term.max = $pattern.substr($rxpos, 1);
                 $rxpos++;
-                if self.p($rxpos, '..') {
+                if p($pattern, $rxpos, '..') {
                     $rxpos += 2;
-                    $term.max = $!pattern.substr($rxpos, 1);
+                    $term.max = $pattern.substr($rxpos, 1);
                     ++$rxpos;
                 }
                 if $brackets {
                     die 'No "}" found'
-                        unless self.p($rxpos, '}');
+                        unless p($pattern, $rxpos, '}');
                     $rxpos += 1;
                 }
             }
-            elsif (my $op = $!pattern.substr($rxpos, 1)) eq '*'|'+'|'?' {
+            elsif (my $op = $pattern.substr($rxpos, 1)) eq '*'|'+'|'?' {
                 $term = GGE::Exp::Quant.new( :type<greedy>, :min(0), :max(Inf),
                                              :$ratchet, :expr(@terms.pop) );
                 if $op eq '+' {
@@ -84,30 +51,64 @@ class GGE::Perl6Regex {
                     $term.max = 1;
                 }
                 ++$rxpos;
-                self.parse-backtracking-modifiers($rxpos, $term);
+                parse-backtracking-modifiers($pattern, $rxpos, $term);
             }
-            elsif self.p($rxpos, ' ') {
+            elsif p($pattern, $rxpos, ' ') {
                 ++$rxpos;
                 next;
             }
-            elsif self.p($rxpos, '\\s'|'\\S') {
-                my $type = $!pattern.substr($rxpos + 1, 1);
+            elsif p($pattern, $rxpos, '\\s'|'\\S') {
+                my $type = $pattern.substr($rxpos + 1, 1);
                 $term = GGE::Exp::CCShortcut.new(:$type);
                 $rxpos += 2;
             }
-            elsif self.p($rxpos, '^'|'$') {
-                my $type = $!pattern.substr($rxpos, 1);
+            elsif p($pattern, $rxpos, '^'|'$') {
+                my $type = $pattern.substr($rxpos, 1);
                 $term = GGE::Exp::Anchor.new(:$type);
                 ++$rxpos;
             }
             else {
                 $term = GGE::Exp::Literal.new(
-                            :value($!pattern.substr($rxpos, 1))
+                            :value($pattern.substr($rxpos, 1))
                         );
                 ++$rxpos;
             }
             push @terms, $term;
         }
+        return self.bless(*, :@terms);
+    }
+
+    sub p($pattern, $pos, $substr) {
+        $pattern.substr($pos, $substr.chars) eq $substr;
+    }
+
+    sub parse-backtracking-modifiers($pattern, $rxpos is rw, $quant) {
+        if p($pattern, $rxpos, ':?') {
+            $quant.ratchet = False;
+            $quant.type = 'eager';
+            $rxpos += 2;
+        }
+        elsif p($pattern, $rxpos, ':!') {
+            $quant.ratchet = False;
+            $rxpos += 2;
+        }
+        elsif p($pattern, $rxpos, '?') {
+            $quant.ratchet = False;
+            $quant.type = 'eager';
+            ++$rxpos;
+        }
+        elsif p($pattern, $rxpos, '!') {
+            $quant.ratchet = False;
+            ++$rxpos;
+        }
+        elsif p($pattern, $rxpos, ':') {
+            $quant.ratchet = True;
+            ++$rxpos;
+        }
+    }
+
+    method postcircumfix:<( )>($target, :$debug) {
+        my @terms = @!terms;
         for ^$target.chars -> $from {
             my $to = $from;
             my $old-to;
