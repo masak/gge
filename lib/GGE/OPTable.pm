@@ -1,7 +1,6 @@
 use v6;
 
 use GGE::Match;
-use GGE::Perl6Regex;
 
 class GGE::OPTable {
     # RAKUDO: Must define these within the class for them to be visible.
@@ -169,11 +168,9 @@ class GGE::OPTable {
                 for (%!keys{$key} // []).list -> $token {
                     my $name = $token<name>;
                     if $token.exists('parsed') {
+                        # RAKUDO: !~~ doesn't work here
+                        next if !($token<parsed> ~~ Method); # hack; wrong
                         my $routine = $token<parsed>;
-                        if $routine ~~ GGE::Perl6Regex {
-                            # We don't do this trick yet :/
-                            last;
-                        }
                         my $oper = $routine($m);
                         if $oper.to > $pos {
                             unless $expect +& $token<expect> {
