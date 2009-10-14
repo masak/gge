@@ -146,7 +146,8 @@ class GGE::OPTable {
         };
         while $pos < $text.chars {
             my $stop_matching = False;
-            if $text.substr($pos, $stoptoken.chars) eq $stoptoken
+            if $stoptoken
+               && $text.substr($pos, $stoptoken.chars) eq $stoptoken
                && $circumnest == 0 {
                 $stop_matching = True;
                 last;
