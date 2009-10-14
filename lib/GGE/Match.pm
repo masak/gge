@@ -2,9 +2,17 @@ use v6;
 
 # RAKUDO: See the postcircumfix:<{ }> below.
 class Store {
-    has %.attrs;
+    has %!hash is rw;
+    has @!array is rw;
 
-    method access($key) { %!attrs{$key} }
+    method hash-access($key) { %!hash{$key} }
+    method hash-delete($key) { %!hash.delete($key) }
+
+    method array-access($index) { @!array[$index] }
+    method array-setelem($index, $value) { @!array[$index] = $value }
+    method array-push($item) { @!array.push($item) }
+    method array-list() { @!array.list }
+    method array-elems() { @!array.elems }
 }
 
 class GGE::Match {
@@ -12,7 +20,6 @@ class GGE::Match {
     has $.from is rw = 0;
     has $.to is rw = 0;
     has $!store = Store.new;
-    has @!submatches;
 
     # RAKUDO: Shouldn't need this
     multi method new(*%_) {
@@ -20,7 +27,9 @@ class GGE::Match {
     }
 
     multi method new(GGE::Match $match) {
-        defined $match ?? $match.clone() !! self.new();
+        defined $match ?? self.new(:target($match.target), :from($match.from),
+                                   :to($match.to))
+                       !! self.new();
     }
 
     method true() {
@@ -40,14 +49,23 @@ class GGE::Match {
     # RAKUDO: There's a bug preventing me from using hash lookup in a
     #         postcircumfix:<{ }> method. This workaround uses the above
     #         class to put the problematic hash lookup out of reach.
-    method postcircumfix:<{ }>($key) { $!store.access($key) }
+    method postcircumfix:<{ }>($key) { $!store.hash-access($key) }
+    method postcircumfix:<[ ]>($index) { $!store.array-access($index) }
+
+    method set($index, $value) { $!store.array-setelem($index, $value) }
+
+    method delete($key) { $!store.hash-delete($key) }
 
     method push($submatch) {
-        @!submatches.push($submatch);
+        $!store.array-push($submatch);
     }
 
     method llist() {
-        @!submatches
+        $!store.array-list();
+    }
+
+    method elems() {
+        $!store.array-elems();
     }
 
     method ident() {

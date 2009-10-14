@@ -11,7 +11,7 @@ my GGE::OPTable $optable .= new;
 #         that triggered the Parrot bug wherein methods in a class collide
 #         with routines outside of it. So $ident it is.
 my $ident = &GGE::Match::ident;
-my $arrow = GGE::Perl6Regex.new("'->' <ident>");
+#my $arrow = GGE::Perl6Regex.new("'->' <ident>");
 for ['infix:+',           precedence => '='                                 ],
     ['infix:-',           equiv      => 'infix:+'                           ],
     ['infix:*',           tighter    => 'infix:+'                           ],
@@ -30,8 +30,8 @@ for ['infix:+',           precedence => '='                                 ],
     ['circumfix:( )',     equiv      => 'term:'                             ],
     ['circumfix:[ ]',     equiv      => 'term:'                             ],
     ['postcircumfix:( )', looser     => 'term:', :nullterm,  :nows          ],
-    ['postcircumfix:[ ]', equiv      => 'postcircumfix:( )', :nows          ],
-    ['term:->',           equiv      => 'term:', :!skipkey, :parsed($arrow) ]
+    ['postcircumfix:[ ]', equiv      => 'postcircumfix:( )', :nows          ]#,
+#    ['term:->',           equiv      => 'term:', :!skipkey, :parsed($arrow) ]
 -> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'a',     'term:a',                                   'Simple term' );
@@ -110,6 +110,26 @@ optable_output_is(
 
 optable_output_is( 'a,b;c', 'infix:,(term:a, term:b) (pos=3)', 'top-level stop token' );
 
+$optable .= new;
+
+for ['term:',             precedence => '=', :parsed($ident)      ],
+    ['postfix:*',         looser     => 'term:'                   ],
+    ['infix:',            looser     => 'postfix:*', :assoc<list> ]
+-> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+
+optable_output_is( 'x a*y', 'infix:(term:x, postfix:*(term:a), term:y)',
+                   'list assoc redux' );
+
+$optable .= new;
+
+for ['term:',             precedence => '=', :parsed($ident)      ],
+    ['postfix:+',         looser     => 'term:'                   ],
+    ['postfix:!',         equiv      => 'postfix:+'               ]
+-> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+
+optable_output_is( 'a+!', 'postfix:!(postfix:+(term:a))',
+                   'precedence of two postfixes' );
+
 sub optable_output_is($test, $expected, $msg) {
     my $output;
     if $optable.parse($test, :stop(' ;')) -> $match {
@@ -126,7 +146,7 @@ sub optable_output_is($test, $expected, $msg) {
 }
 
 sub tree($match) {
-    return 'null' if $match ~~ '';
+    return 'null' if !$match;
     my $r = $match<type>;
     given $match<type> {
         # RAKUDO: Removing the semicolon below causes a runtime error

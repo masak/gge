@@ -1,60 +1,82 @@
 use v6;
+use GGE::Match;
 
-class GGE::Exp {}
+enum GGE_BACKTRACK <
+    GREEDY
+    EAGER
+    NONE
+>;
+
+class GGE::Exp is GGE::Match {}
 
 class GGE::Exp::Literal is GGE::Exp {
-    has $.value;
-
     method matches($string, $pos is rw) {
         if $pos >= $string.chars {
             return False;
         }
-        if $!value eq '.' {
+        my $value = self.Str;
+        if $string.substr($pos, $value.chars) eq $value {
+            $pos += $value.chars;
+            return True;
+        }
+    }
+}
+
+class GGE::Exp::Quant is GGE::Exp {
+    has &.backtrack = { False };
+
+    method matches($string, $pos is rw) {
+        for ^self<min> {
+            return False if !self[0].matches($string, $pos);
+        }
+        my $n = self<min>;
+        if self<backtrack> == EAGER {
+            &!backtrack = {
+                $n++ < self<max> && self[0].matches($string, $pos)
+            };
+        }
+        else {
+            my @positions;
+            while $n++ < self<max> {
+                push @positions, $pos;
+                last if !self[0].matches($string, $pos);
+            }
+            if self<backtrack> == GREEDY {
+                &!backtrack = {
+                    @positions && $pos = pop @positions
+                };
+            }
+        }
+        return True;
+    }
+}
+
+class GGE::Exp::CCShortcut is GGE::Exp {
+    method matches($string, $pos is rw) {
+        if $pos >= $string.chars {
+            return False;
+        }
+        if self.Str eq '.'
+           || self.Str eq '\\s' && $string.substr($pos, 1) eq ' '
+           || self.Str eq '\\S' && $string.substr($pos, 1) ne ' ' {
             ++$pos;
             return True;
         }
         else {
-            if $string.substr($pos, $!value.chars) eq $!value {
-                $pos += $!value.chars;
-                return True;
-            }
-        }
-    }
-
-    method Str { qq['$.value'] }
-}
-
-class GGE::Exp::Quant is GGE::Exp {
-    has $.type    is rw;
-    has $.ratchet is rw;
-    has $.min     is rw;
-    has $.max     is rw;
-    has $.expr    is rw;
-
-    method Str { 'quantifier expression' }
-}
-
-class GGE::Exp::CCShortcut is GGE::Exp {
-    has $.type;
-
-    method matches($string, $pos is rw) {
-        if $!type eq 's' && $string.substr($pos, 1) eq ' ' {
-            ++$pos;
-            return True;
-        }
-        elsif $!type eq 'S' && $pos < $string.chars
-              && $string.substr($pos, 1) ne ' ' {
-            ++$pos;
-            return True;
+            return False;
         }
     }
 }
 
 class GGE::Exp::Anchor is GGE::Exp {
-    has $.type;
-
     method matches($string, $pos is rw) {
-        return $!type eq '^' && $pos == 0
-            || $!type eq '$' && $pos == $string.chars;
+        return self.Str eq '^' && $pos == 0
+            || self.Str eq '$' && $pos == $string.chars;
     }
+}
+
+class GGE::Exp::Concat is GGE::Exp {
+}
+
+class GGE::Exp::Modifier is GGE::Exp {
 }
