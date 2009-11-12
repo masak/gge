@@ -165,6 +165,7 @@ class GGE::OPTable {
             my $key_firstchar = $text.substr($pos, 1);
             my $maxlength = %!klen{$key_firstchar} // 0;
             my $key = $text.substr($pos, $maxlength);
+            my $orig-key = $key;
             my $found_oper = False;
             loop {
                 if $text.substr($pos, $key.chars) ne $key {
@@ -174,6 +175,7 @@ class GGE::OPTable {
                 }
                 for (%!keys{$key} // []).list -> $token {
                     next unless $expect +& $token<expect>;
+                    next if $token<nows> && $nows;
                     my $name = $token<name>;
                     my $matchclass = %!tokens{$name}<match> ~~ GGE::Match ??
                                      %!tokens{$name}<match> !! GGE::Match;
@@ -187,6 +189,7 @@ class GGE::OPTable {
                                   || $token<parsed> ~~ Sub); # hack; wrong
                         my $routine = $token<parsed>;
                         $m<KEY> = $key;
+                        $m.to = $pos;
                         $oper = $routine($m);
                         $m.delete('KEY');
                         $oper<type> = $name;
@@ -205,77 +208,81 @@ class GGE::OPTable {
                         $found_oper = True;
                         last;
                     }
-                    elsif !($token<nows> && $nows) {
-                        my $shift_reduce_done = False;
-                        while !$shift_reduce_done {
-                            if @operstack {
-                                my $top = @tokenstack[*-1];
-                                my $topcat = $top<syncat>;
-                                if $token<syncat> == GGE_OPTABLE_CLOSE() {
-                                    unless $circumnest {
-                                        $shift_reduce_done = True;
-                                        $stop_matching = True;
-                                        last;
-                                    }
-                                    if $topcat < GGE_OPTABLE_POSTCIRCUMFIX() {
-                                        reduce;
-                                        next;
-                                    }
-                                    $top = @tokenstack[*-1];
-                                    if $top<keyclose> ne $key {
-                                        $shift_reduce_done = True;
-                                        $stop_matching = True;
-                                        last;
-                                    }
-                                    --$circumnest;
+                    my $shift_reduce_done = False;
+                    while !$shift_reduce_done {
+                        if @operstack {
+                            my $top = @tokenstack[*-1];
+                            my $topcat = $top<syncat>;
+                            if $token<syncat> == GGE_OPTABLE_CLOSE() {
+                                unless $circumnest {
+                                    $shift_reduce_done = True;
+                                    $stop_matching = True;
+                                    last;
                                 }
-                                elsif $token<syncat> >= GGE_OPTABLE_POSTCIRCUMFIX() {
-                                    ++$circumnest;
-                                    # go directly to shift
+                                if $topcat < GGE_OPTABLE_POSTCIRCUMFIX() {
+                                    reduce;
+                                    next;
                                 }
-                                elsif $topcat == $token<syncat>
-                                              == GGE_OPTABLE_INFIX() {
-                                    # XXX: You guessed it -- the addition of
-                                    #      a hundred equals signs is kind of
-                                    #      a hack.
-                                    my $topprec = $top<precedence> ~ '=' x 100;
-                                    my $prec = $token<precedence> ~ '=' x 100;
-                                    my $topassoc = $top<assoc>;
-                                    if $topprec gt $prec
-                                       || $topprec eq $prec
-                                          && $topassoc ne 'right' {
-                                        reduce;
-                                        next;
-                                    }
+                                $top = @tokenstack[*-1];
+                                if $top<keyclose> ne $key {
+                                    $shift_reduce_done = True;
+                                    $stop_matching = True;
+                                    last;
                                 }
-                                elsif all($topcat, $token<syncat>)
-                                      == GGE_OPTABLE_PREFIX()
-                                       | GGE_OPTABLE_INFIX()
-                                       | GGE_OPTABLE_POSTFIX() {
-                                    # XXX: You guessed it -- the addition of
-                                    #      a hundred equals signs is kind of
-                                    #      a hack.
-                                    my $topprec = $top<precedence> ~ '=' x 100;
-                                    my $prec = $token<precedence> ~ '=' x 100;
-                                    if $topprec ge $prec {
-                                        reduce;
-                                        next;
-                                    }
-                                }
+                                --$circumnest;
                             }
                             elsif $token<syncat> >= GGE_OPTABLE_POSTCIRCUMFIX() {
                                 ++$circumnest;
                                 # go directly to shift
                             }
-                            shift_oper($oper, $token);
-                            $shift_reduce_done = True;
-                            $found_oper = True;
+                            elsif $topcat == $token<syncat>
+                                          == GGE_OPTABLE_INFIX() {
+                                # XXX: You guessed it -- the addition of
+                                #      a hundred equals signs is kind of
+                                #      a hack.
+                                my $topprec = $top<precedence> ~ '=' x 100;
+                                my $prec = $token<precedence> ~ '=' x 100;
+                                my $topassoc = $top<assoc>;
+                                if $topprec gt $prec
+                                   || $topprec eq $prec
+                                      && $topassoc ne 'right' {
+                                    reduce;
+                                    next;
+                                }
+                            }
+                            elsif all($topcat, $token<syncat>)
+                                  == GGE_OPTABLE_PREFIX()
+                                   | GGE_OPTABLE_INFIX()
+                                   | GGE_OPTABLE_POSTFIX() {
+                                # XXX: You guessed it -- the addition of
+                                #      a hundred equals signs is kind of
+                                #      a hack.
+                                my $topprec = $top<precedence> ~ '=' x 100;
+                                my $prec = $token<precedence> ~ '=' x 100;
+                                if $topprec ge $prec {
+                                    reduce;
+                                    next;
+                                }
+                            }
                         }
-                        last if $found_oper || $stop_matching;
+                        elsif $token<syncat> >= GGE_OPTABLE_POSTCIRCUMFIX() {
+                            ++$circumnest;
+                            # go directly to shift
+                        }
+                        shift_oper($oper, $token);
+                        $shift_reduce_done = True;
+                        $found_oper = True;
                     }
+                    last if $found_oper || $stop_matching;
                 }
                 last if $found_oper || $stop_matching;
                 if $key eq '' {
+                    if $pos != $wspos {
+                        $pos = $wspos;
+                        $nows = False;
+                        $key = $orig-key;
+                        next;
+                    }
                     if $expect +& GGE_OPTABLE_EXPECT_TERM() {
                         if @tokenstack && @tokenstack[*-1]<nullterm> {
                             $expect = GGE_OPTABLE_EXPECT_OPER;

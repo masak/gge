@@ -130,6 +130,16 @@ for ['term:',             precedence => '=', :parsed($ident)      ],
 optable_output_is( 'a+!', 'postfix:!(postfix:+(term:a))',
                    'precedence of two postfixes' );
 
+$optable .= new;
+
+for ['term:',             precedence => '=', :parsed($ident)         ],
+    ['term:^',            equiv      => 'term:'                      ],
+    ['infix:',            looser     => 'term:', :assoc<list>, :nows ]
+-> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+
+optable_output_is( '^ abc', 'infix:(term:^(), term:abc)',
+                   'whitespace and infix:' );
+
 sub optable_output_is($test, $expected, $msg) {
     my $output;
     if $optable.parse($test, :stop(' ;')) -> $match {
