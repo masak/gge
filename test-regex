@@ -6,5 +6,12 @@ die "Usage: ./test-regex <pattern> <target>"
     unless @*ARGS == 2;
 
 my ($pattern, $target) = @*ARGS;
-my GGE::Match $match = GGE::Perl6Regex.new($pattern).($target, :debug);
+my GGE::Match $match
+    = GGE::Perl6Regex.new($pattern).(backslash_escape($target), :debug);
 say $match.dump_str() || 'No match';
+
+sub backslash_escape($string) {
+    return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
+                         ["\n", "\r", "\e", "\t", "\f"])\
+                  .subst(/'\\x' (\d\d)/, { chr(:16($0)) }, :g);
+}

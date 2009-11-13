@@ -7,9 +7,26 @@ enum GGE_BACKTRACK <
     NONE
 >;
 
-class GGE::Exp is GGE::Match {}
+role ShowContents {
+    method contents() {
+        self.Str;
+    }
+}
 
-class GGE::Exp::Literal is GGE::Exp {
+class GGE::Exp is GGE::Match {
+    method structure($indent = 0) {
+        my $contents
+            = self.llist
+                ?? "[{ map { "\n{$_.structure($indent + 1)}" }, self.llist }"
+                   ~ "\n{'  ' x $indent}]"
+                !! self.?contents
+                    ?? " ('{self.contents}')"
+                    !! '';
+        '  ' x $indent ~ self.WHAT.perl ~ $contents;
+    }
+}
+
+class GGE::Exp::Literal is GGE::Exp does ShowContents {
     method matches($string, $pos is rw) {
         if $pos >= $string.chars {
             return False;
@@ -51,14 +68,15 @@ class GGE::Exp::Quant is GGE::Exp {
     }
 }
 
-class GGE::Exp::CCShortcut is GGE::Exp {
+class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
     method matches($string, $pos is rw) {
         if $pos >= $string.chars {
             return False;
         }
         if self.Str eq '.'
            || self.Str eq '\\s' && $string.substr($pos, 1) eq ' '
-           || self.Str eq '\\S' && $string.substr($pos, 1) ne ' ' {
+           || self.Str eq '\\S' && $string.substr($pos, 1) ne ' '
+           || self.Str eq '\\n' && $string.substr($pos, 1) eq "\n" {
             ++$pos;
             return True;
         }
@@ -68,7 +86,7 @@ class GGE::Exp::CCShortcut is GGE::Exp {
     }
 }
 
-class GGE::Exp::Anchor is GGE::Exp {
+class GGE::Exp::Anchor is GGE::Exp does ShowContents {
     method matches($string, $pos is rw) {
         return self.Str eq '^' && $pos == 0
             || self.Str eq '$' && $pos == $string.chars;
@@ -78,5 +96,5 @@ class GGE::Exp::Anchor is GGE::Exp {
 class GGE::Exp::Concat is GGE::Exp {
 }
 
-class GGE::Exp::Modifier is GGE::Exp {
+class GGE::Exp::Modifier is GGE::Exp does ShowContents {
 }

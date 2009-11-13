@@ -24,7 +24,9 @@ for @test-files -> $test-file {
         $line ~~ /^ (<-[\t]>*) \t+ (<-[\t]>+) \t+ (<-[\t]>+) \t+ (.*) $/
             or die "Unrecognized line format: $line";
         my ($pattern, $target, $result, $description) = $0, $1, $2, $3;
-        $pattern = backslash_escape($pattern);
+        # The PGE tests say to escape the pattern too, but I can't see why,
+        # and the tests don't make sense if I do. I'll ask pmichaud++ later.
+        #$pattern = backslash_escape($pattern);
         $target  = $target eq q[''] ?? '' !! backslash_escape($target);
         my $full-description = "[$test-file:$i] $description";
         my $match;

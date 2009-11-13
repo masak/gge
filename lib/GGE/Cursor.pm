@@ -8,7 +8,9 @@ has GGE::Exp $!top;
 has Str $!target;
 has Int $.pos = 0;
 
-method matches() {
+method matches(:$debug) {
+    my &DEBUG = $debug ?? -> *@_ { say @_ } !! -> *@ {};
+    DEBUG "Starting match at pos $!pos";
     my $current = $!top;
     while $current ~~ GGE::Exp::Modifier {
         $current = $current.llist[0];
@@ -30,11 +32,14 @@ method matches() {
                 }
             }
             else {
+                my $old-pos = $!pos;
                 if $child.matches($!target, $!pos) {
-                    # yay! we match!
+                    DEBUG "MATCH: '{$child.Str}' at pos $old-pos";
                 }
                 else {
+                    DEBUG "MISMATCH: '{$child.Str}' at pos $old-pos";
                     return False unless @savepoints; # XXX acabcabbcac
+                    DEBUG 'Backtracking...';
                     $i = @savepoints[*-1];
                     $backtracking = True;
                     redo;

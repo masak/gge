@@ -19,6 +19,8 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:.',    :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\n',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\s',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\S',  :equiv<term:>,
@@ -35,7 +37,7 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('postfix:**', :equiv<postfix:*>,
                         :parsed(&GGE::Perl6Regex::parse_quant));
-        $optable.newtok('infix:',    :looser<postfix:*>, :assoc('list'),
+        $optable.newtok('infix:',    :looser<postfix:*>, :assoc<list>,
                         :nows, :match(GGE::Exp::Concat));
         $optable.newtok('prefix::',  :looser<infix:>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
@@ -46,10 +48,13 @@ class GGE::Perl6Regex {
     }
 
     method postcircumfix:<( )>($target, :$debug) {
+        if $debug {
+            say $!regex.structure;
+        }
         for ^$target.chars -> $from {
             my GGE::Cursor $cursor .= new(:top($!regex), :$target,
                                           :pos($from), :$debug);
-            if $cursor.matches() {
+            if $cursor.matches(:$debug) {
                 return GGE::Match.new(:$target, :$from, :to($cursor.pos));
             }
         }
@@ -81,7 +86,6 @@ class GGE::Perl6Regex {
             die "No closing ' in quoted literal";
         }
         $m.to = $closing-quote;
-        say "From {$m.from} to {$m.to}";
         $m;
     }
 
