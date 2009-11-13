@@ -80,7 +80,8 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
         if self.Str eq '.'
            || self.Str eq '\\s' && $string.substr($pos, 1) eq ' '
            || self.Str eq '\\S' && $string.substr($pos, 1) ne ' '
-           || self.Str eq '\\n' && $string.substr($pos, 1) eq "\n"|"\r" {
+           || self.Str eq '\\n' && $string.substr($pos, 1) eq "\n"|"\r"
+           || self.Str eq '\\N' && !($string.substr($pos, 1) eq "\n"|"\r") {
             ++$pos;
             return True;
         }
