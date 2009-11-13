@@ -73,6 +73,10 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
         if $pos >= $string.chars {
             return False;
         }
+        if self.Str eq '\\n' && $string.substr($pos, 2) eq "\r\n" {
+            $pos += 2;
+            return True;
+        }
         if self.Str eq '.'
            || self.Str eq '\\s' && $string.substr($pos, 1) eq ' '
            || self.Str eq '\\S' && $string.substr($pos, 1) ne ' '
