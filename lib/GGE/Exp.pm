@@ -127,3 +127,18 @@ class GGE::Exp::Concat is GGE::Exp {
 
 class GGE::Exp::Modifier is GGE::Exp does ShowContents {
 }
+
+class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
+    method matches($string, $pos is rw) {
+        if $pos >= $string.chars {
+            return False;
+        }
+        if defined self.ast.index($string.substr($pos, 1)) {
+            ++$pos;
+            return True;
+        }
+        else {
+            return False;
+        }
+    }
+}

@@ -37,6 +37,8 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\n',  :equiv<term:>,
                         :match(GGE::Exp::Newline));
+        $optable.newtok('term:<[',   :equiv<term:>,
+                        :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok("term:'",    :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quoted_literal));
         $optable.newtok('postfix:*', :looser<term:>,
@@ -92,6 +94,44 @@ class GGE::Perl6Regex {
         else {
             die 'Alphanumeric metacharacters are reserved';
         }
+    }
+
+    sub parse_enumcharclass($mob) {
+        my $target = $mob.target;
+        my $pos = $mob.to;
+        $pos += 2;
+        my Str $charlist = '';
+        my Bool $isrange = False;
+        while True {
+            die 'No ] on that char class'
+                if $pos >= $target.chars;
+            given my $char = $target.substr($pos, 1) {
+                when ']' {
+                    last;
+                }
+                when '.' {
+                    if $target.substr($pos, 2) ne '..' {
+                        continue;
+                    }
+                    $pos += 2;
+                    $isrange = True;
+                    next;
+                }
+                if $isrange {
+                    $isrange = False;
+                    my $fromchar = $charlist.substr(-1, 1);
+                    $charlist ~= $_ for $fromchar ^.. $char;
+                }
+                else {
+                    $charlist ~= $char;
+                }
+            }
+            ++$pos;
+        }
+        my $term = GGE::Exp::EnumCharList.new($mob);
+        $term.to = $pos;
+        $term.make($charlist);
+        return $term;
     }
 
     sub parse_quoted_literal($mob) {
