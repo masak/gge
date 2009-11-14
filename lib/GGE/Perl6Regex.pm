@@ -77,10 +77,7 @@ class GGE::Perl6Regex {
     }
 
     sub parse_term_backslash($mob) {
-        my $m = GGE::Exp::Literal.new($mob);
-        $m.from = $mob.to;
-        $m.to = $m.from + 2;
-        $m;
+        die 'Alphanumeric metacharacters are reserved';
     }
 
     sub parse_quoted_literal($mob) {
