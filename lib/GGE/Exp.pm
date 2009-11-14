@@ -101,7 +101,10 @@ class GGE::Exp::Anchor is GGE::Exp does ShowContents {
                && $string.substr($pos - 1, 1) ~~ /\w/
                && ($pos == $string.chars || $string.substr($pos, 1) !~~ /\w/)
             || self.ast eq '^^' && ($pos == 0 || $pos < $string.chars
-               && $string.substr($pos - 1, 1) eq "\n");
+               && $string.substr($pos - 1, 1) eq "\n")
+            || self.ast eq '$$' && ($string.substr($pos, 1) eq "\n"
+               || $pos == $string.chars
+                  && ($pos < 1 || $string.substr($pos - 1, 1) ne "\n"));
     }
 }
 

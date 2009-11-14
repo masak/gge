@@ -19,6 +19,8 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:$',    :equiv<term:>, # XXX not per PGE
                         :match(GGE::Exp::Anchor));
+        $optable.newtok('term:$$',   :equiv<term:>,
+                        :match(GGE::Exp::Anchor));
         $optable.newtok('term:<<',   :equiv<term:>,
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:>>',   :equiv<term:>,
