@@ -34,10 +34,10 @@ method matches(:$debug) {
             else {
                 my $old-pos = $!pos;
                 if $child.matches($!target, $!pos) {
-                    DEBUG "MATCH: '{$child.Str}' at pos $old-pos";
+                    DEBUG "MATCH: '{$child.ast}' at pos $old-pos";
                 }
                 else {
-                    DEBUG "MISMATCH: '{$child.Str}' at pos $old-pos";
+                    DEBUG "MISMATCH: '{$child.ast}' at pos $old-pos";
                     return False unless @savepoints; # XXX acabcabbcac
                     DEBUG 'Backtracking...';
                     $i = @savepoints[*-1];

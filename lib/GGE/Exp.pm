@@ -9,7 +9,7 @@ enum GGE_BACKTRACK <
 
 role ShowContents {
     method contents() {
-        self.Str;
+        self.ast;
     }
 }
 
@@ -31,7 +31,7 @@ class GGE::Exp::Literal is GGE::Exp does ShowContents {
         if $pos >= $string.chars {
             return False;
         }
-        my $value = self.Str;
+        my $value = ~self.ast;
         if $string.substr($pos, $value.chars) eq $value {
             $pos += $value.chars;
             return True;

@@ -20,6 +20,7 @@ class GGE::Match {
     has $.from is rw = 0;
     has $.to is rw = 0;
     has $!store = Store.new;
+    has $!ast;
 
     # RAKUDO: Shouldn't need this
     multi method new(*%_) {
@@ -66,6 +67,14 @@ class GGE::Match {
 
     method elems() {
         $!store.array-elems();
+    }
+
+    method make($obj) {
+        $!ast = $obj;
+    }
+
+    method ast() {
+        $!ast // self.Str
     }
 
     method ident() {
