@@ -15,6 +15,8 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_term_backslash));
         $optable.newtok('term:^',    :equiv<term:>,
                         :match(GGE::Exp::Anchor));
+        $optable.newtok('term:^^',   :equiv<term:>,
+                        :match(GGE::Exp::Anchor));
         $optable.newtok('term:$',    :equiv<term:>, # XXX not per PGE
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:<<',   :equiv<term:>,

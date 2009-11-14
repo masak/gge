@@ -93,13 +93,15 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
 
 class GGE::Exp::Anchor is GGE::Exp does ShowContents {
     method matches($string, $pos is rw) {
-        return self.Str eq '^' && $pos == 0
-            || self.Str eq '$' && $pos == $string.chars
-            || self.Str eq '<<' && $string.substr($pos, 1) ~~ /\w/
+        return self.ast eq '^' && $pos == 0
+            || self.ast eq '$' && $pos == $string.chars
+            || self.ast eq '<<' && $string.substr($pos, 1) ~~ /\w/
                && ($pos == 0 || $string.substr($pos - 1, 1) !~~ /\w/)
-            || self.Str eq '>>' && $pos > 0
+            || self.ast eq '>>' && $pos > 0
                && $string.substr($pos - 1, 1) ~~ /\w/
-               && ($pos == $string.chars || $string.substr($pos, 1) !~~ /\w/);
+               && ($pos == $string.chars || $string.substr($pos, 1) !~~ /\w/)
+            || self.ast eq '^^' && ($pos == 0 || $pos < $string.chars
+               && $string.substr($pos - 1, 1) eq "\n");
     }
 }
 
