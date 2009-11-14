@@ -27,16 +27,16 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:.',    :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\n',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\N',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\s',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\S',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\w',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\N',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\n',  :equiv<term:>,
+                        :match(GGE::Exp::Newline));
         $optable.newtok("term:'",    :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quoted_literal));
         $optable.newtok('postfix:*', :looser<term:>,

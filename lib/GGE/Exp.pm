@@ -73,15 +73,29 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
         if $pos >= $string.chars {
             return False;
         }
-        if self.Str eq '\\n' && $string.substr($pos, 2) eq "\r\n" {
-            $pos += 2;
-            return True;
-        }
         if self.Str eq '.'
            || self.Str eq '\\s' && $string.substr($pos, 1) eq ' '
            || self.Str eq '\\S' && $string.substr($pos, 1) ne ' '
-           || self.Str eq '\\n' && $string.substr($pos, 1) eq "\n"|"\r"
            || self.Str eq '\\N' && !($string.substr($pos, 1) eq "\n"|"\r") {
+            ++$pos;
+            return True;
+        }
+        else {
+            return False;
+        }
+    }
+}
+
+class GGE::Exp::Newline is GGE::Exp does ShowContents {
+    method matches($string, $pos is rw) {
+        if $pos >= $string.chars {
+            return False;
+        }
+        if $string.substr($pos, 2) eq "\r\n" {
+            $pos += 2;
+            return True;
+        }
+        if $string.substr($pos, 1) eq "\n"|"\r" {
             ++$pos;
             return True;
         }
