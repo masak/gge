@@ -22,6 +22,10 @@ multi method traverse(GGE::Exp::Modifier $e, :$debug) {
     return self.traverse($e.llist[0], :$debug);
 }
 
+multi method traverse(GGE::Exp::Group $e, :$debug) {
+    return self.traverse($e.llist[0], :$debug);
+}
+
 multi method traverse(GGE::Exp::Concat $e, :$debug) {
     my &DEBUG = $debug ?? -> *@_ { say @_ } !! -> *@ {};
     my @savepoints;
@@ -41,7 +45,7 @@ multi method traverse(GGE::Exp::Concat $e, :$debug) {
         }
         else {
             my $old-pos = $!pos;
-            if $child.matches($!target, $!pos) {
+            if self.traverse($child, :$debug) {
                 DEBUG "MATCH: '{$child.ast}' at pos $old-pos";
             }
             else {

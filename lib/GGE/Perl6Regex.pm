@@ -43,6 +43,8 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok("term:'",    :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quoted_literal));
+        $optable.newtok('circumfix:[ ]', :equiv<term:>,
+                        :match(GGE::Exp::Group));
         $optable.newtok('postfix:*', :looser<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('postfix:+', :equiv<postfix:*>,

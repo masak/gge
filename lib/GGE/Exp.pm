@@ -151,3 +151,6 @@ class GGE::Exp::WS is GGE::Exp {
         return True;
     }
 }
+
+class GGE::Exp::Group is GGE::Exp {
+}
