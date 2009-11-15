@@ -51,7 +51,9 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('infix:',    :looser<postfix:*>, :assoc<list>,
                         :nows, :match(GGE::Exp::Concat));
-        $optable.newtok('prefix::',  :looser<infix:>,
+        $optable.newtok('infix:|',   :looser<infix:>,
+                        :nows, :match(GGE::Exp::Alt));
+        $optable.newtok('prefix::',  :looser<infix:|>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
         my $expr = $optable.parse($pattern)<expr>;
         die 'Regex parse error'

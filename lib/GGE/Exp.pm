@@ -19,7 +19,7 @@ class GGE::Exp is GGE::Match {
             = self.llist
                 ?? "[{ map { "\n{$_.structure($indent + 1)}" }, self.llist }"
                    ~ "\n{'  ' x $indent}]"
-                !! self.?contents
+                !! defined self.?contents
                     ?? " ('{self.contents}')"
                     !! '';
         '  ' x $indent ~ self.WHAT.perl ~ $contents;
@@ -141,4 +141,7 @@ class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
             return False;
         }
     }
+}
+
+class GGE::Exp::Alt is GGE::Exp {
 }
