@@ -11,6 +11,8 @@ class GGE::Perl6Regex {
         my $optable = GGE::OPTable.new();
         $optable.newtok('term:',     :precedence('='),
                         :parsed(&GGE::Perl6Regex::parse_term));
+        $optable.newtok('term:#',    :equiv<term:>,
+                        :parsed(&GGE::Perl6Regex::parse_term_ws));
         $optable.newtok('term:\\',   :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_term_backslash));
         $optable.newtok('term:^',    :equiv<term:>,
@@ -55,9 +57,10 @@ class GGE::Perl6Regex {
                         :nows, :match(GGE::Exp::Alt));
         $optable.newtok('prefix::',  :looser<infix:|>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
-        my $expr = $optable.parse($pattern)<expr>;
+        my $match = $optable.parse($pattern);
         die 'Regex parse error'
-            unless $expr;
+            if $match.to < $pattern.chars;
+        my $expr = $match<expr>;
         return self.bless(*, :regex(perl6exp($expr, {})));
     }
 
@@ -91,6 +94,12 @@ class GGE::Perl6Regex {
         $m.from = $mob.to;
         $m.to = $m.from;
         $m.to++ while $m.target.substr($m.to, 1) ~~ /\s/;
+        if $m.target.substr($m.to, 1) eq '#' {
+            my $delim = "\n";
+            $m.to = defined $m.target.index($delim, $m.to)
+                    ?? $m.target.index($delim, $m.to) + 1
+                    !!  $m.target.chars;
+        }
         $m;
     }
 
