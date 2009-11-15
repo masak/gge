@@ -76,11 +76,21 @@ class GGE::Perl6Regex {
     }
 
     sub parse_term($mob) {
+        if $mob.target.substr($mob.to, 1) ~~ /\s/ {
+            return parse_term_ws($mob);
+        }
         my $m = GGE::Exp::Literal.new($mob);
         $m.from = $mob.to;
         my $target = $m.target;
-        $m.from++ while $m.target.substr($m.from, 1) ~~ /\s/;
         $m.to = $m.from + ($target.substr($m.from, 1) ~~ /\w/ ?? 1 !! 0);
+        $m;
+    }
+
+    sub parse_term_ws($mob) {
+        my $m = GGE::Exp::WS.new($mob);
+        $m.from = $mob.to;
+        $m.to = $m.from;
+        $m.to++ while $m.target.substr($m.to, 1) ~~ /\s/;
         $m;
     }
 

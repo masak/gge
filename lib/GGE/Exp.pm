@@ -145,3 +145,9 @@ class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
 
 class GGE::Exp::Alt is GGE::Exp {
 }
+
+class GGE::Exp::WS is GGE::Exp {
+    method matches($string, $pos is rw) {
+        return True;
+    }
+}
