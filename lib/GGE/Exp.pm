@@ -144,6 +144,11 @@ class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
 }
 
 class GGE::Exp::Alt is GGE::Exp {
+    has &.backtrack = { False };
+
+    method matches($string, $pos is rw) {
+        return self.llist[0].matches($string, $pos);
+    }
 }
 
 class GGE::Exp::WS is GGE::Exp {

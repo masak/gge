@@ -1,76 +1,55 @@
 use v6;
 
 use GGE::Exp;
+use GGE::Traversal;
 
 class GGE::Cursor;
 
-has GGE::Exp $!top;
+has GGE::Traversal $!traversal;
 has Str $!target;
-has Int $.pos = 0;
+has Int $.pos;
+
+submethod BUILD(GGE::Exp :$exp, Str :$!target, Int :$!pos) {
+    $!traversal = GGE::Traversal.new(:$exp);
+}
 
 method matches(:$debug) {
     my &DEBUG = $debug ?? -> *@_ { say @_ } !! -> *@ {};
     DEBUG "Starting match at pos $!pos";
-    return self.traverse($!top, :$debug);
-}
 
-multi method traverse(GGE::Exp $e) {
-    return $e.matches($!target, $!pos);
-}
-
-multi method traverse(GGE::Exp::Modifier $e, :$debug) {
-    return self.traverse($e.llist[0], :$debug);
-}
-
-multi method traverse(GGE::Exp::Group $e, :$debug) {
-    return self.traverse($e.llist[0], :$debug);
-}
-
-multi method traverse(GGE::Exp::Concat $e, :$debug) {
-    my &DEBUG = $debug ?? -> *@_ { say @_ } !! -> *@ {};
     my @savepoints;
     my $backtracking = False;
-    loop (my $i = 0; $i < $e.llist.elems; ++$i) {
-        my $child = $e.llist[$i];
+    my $current = $!traversal.next.<START>;
+    while $current ne 'END' {
         if $backtracking {
-            if $child.backtrack().() {
+            if $current.backtrack().() {
                 $backtracking = False;
             }
             else {
                 pop @savepoints;
                 return False unless @savepoints; # XXX acabcabbcac
-                $i = @savepoints[*-1];
+                $current = @savepoints[*-1];
                 redo;
             }
         }
         else {
             my $old-pos = $!pos;
-            if self.traverse($child, :$debug) {
-                DEBUG "MATCH: '{$child.ast}' at pos $old-pos";
+            if $current.matches($!target, $!pos) {
+                DEBUG "MATCH: '{$current.ast}' at pos $old-pos";
             }
             else {
-                DEBUG "MISMATCH: '{$child.ast}' at pos $old-pos";
+                DEBUG "MISMATCH: '{$current.ast}' at pos $old-pos";
                 return False unless @savepoints; # XXX acabcabbcac
                 DEBUG 'Backtracking...';
-                $i = @savepoints[*-1];
+                $current = @savepoints[*-1];
                 $backtracking = True;
                 redo;
             }
-            if $child ~~ GGE::Exp::Quant {
-                push @savepoints, $i;
+            if $current ~~ GGE::Exp::Quant {
+                push @savepoints, $current;
             }
         }
+        $current = $!traversal.next.{$current.WHICH};
     }
     return True;
-}
-
-multi method traverse(GGE::Exp::Alt $e, :$debug) {
-    my $keep-pos = $!pos;
-    if self.traverse($e.llist[0], :$debug) {
-        return True;
-    }
-    else {
-        $!pos = $keep-pos;
-        return self.traverse($e.llist[1], :$debug);
-    }
 }

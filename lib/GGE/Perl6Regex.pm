@@ -71,7 +71,7 @@ class GGE::Perl6Regex {
             say $!regex.structure;
         }
         for ^$target.chars -> $from {
-            my GGE::Cursor $cursor .= new(:top($!regex), :$target,
+            my GGE::Cursor $cursor .= new(:exp($!regex), :$target,
                                           :pos($from), :$debug);
             if $cursor.matches(:$debug) {
                 return GGE::Match.new(:$target, :$from, :to($cursor.pos));
