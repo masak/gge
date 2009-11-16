@@ -22,7 +22,7 @@ class GGE::Exp is GGE::Match {
                 !! defined self.?contents
                     ?? " ('{self.contents}')"
                     !! '';
-        '  ' x $indent ~ self.WHAT.perl ~ $contents;
+        '  ' x $indent ~ self.WHAT.perl.subst(/^.*':'/, '') ~ $contents;
     }
 }
 
