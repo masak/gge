@@ -40,32 +40,6 @@ class GGE::Exp::Literal is GGE::Exp does ShowContents {
 }
 
 class GGE::Exp::Quant is GGE::Exp {
-    has &.backtrack = { False };
-
-    method matches($string, $pos is rw) {
-        for ^self<min> {
-            return False if !self[0].matches($string, $pos);
-        }
-        my $n = self<min>;
-        if self<backtrack> == EAGER {
-            &!backtrack = {
-                $n++ < self<max> && self[0].matches($string, $pos)
-            };
-        }
-        else {
-            my @positions;
-            while $n++ < self<max> {
-                push @positions, $pos;
-                last if !self[0].matches($string, $pos);
-            }
-            if self<backtrack> == GREEDY {
-                &!backtrack = {
-                    @positions && $pos = pop @positions
-                };
-            }
-        }
-        return True;
-    }
 }
 
 class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
@@ -144,11 +118,6 @@ class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
 }
 
 class GGE::Exp::Alt is GGE::Exp {
-    has &.backtrack = { False };
-
-    method matches($string, $pos is rw) {
-        return self.llist[0].matches($string, $pos);
-    }
 }
 
 class GGE::Exp::WS is GGE::Exp {
