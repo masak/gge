@@ -16,12 +16,12 @@ role ShowContents {
 class GGE::Exp is GGE::Match {
     method structure($indent = 0) {
         my $contents
-            = self.llist
-                ?? "[{ map { "\n{$_.structure($indent + 1)}" }, self.llist }"
-                   ~ "\n{'  ' x $indent}]"
-                !! defined self.?contents
-                    ?? " ('{self.contents}')"
-                    !! '';
+            = join ' ',
+                (defined self.?contents ?? " ('{self.contents}')" !! ()),
+                self.llist
+                  ?? "[{ map { "\n{$_.structure($indent + 1)}" }, self.llist }"
+                     ~ "\n{'  ' x $indent}]"
+                  !! '';
         '  ' x $indent ~ self.WHAT.perl.subst(/^.*':'/, '') ~ $contents;
     }
 }
