@@ -184,18 +184,33 @@ class GGE::OPTable {
                                                :target($text));
                     $oper<type> = $name;
                     if $token.exists('parsed') {
-                        # RAKUDO: !~~ doesn't work here
-                        next if !($token<parsed> ~~ Method
-                                  || $token<parsed> ~~ Sub); # hack; wrong
                         my $routine = $token<parsed>;
-                        $m<KEY> = $key;
-                        $m.to = $pos;
-                        $oper = $routine($m);
-                        $m.delete('KEY');
-                        $oper<type> = $name;
-                        if $oper.to > $pos {
-                            $pos = $oper.to;
-                            $found_oper = True;
+                        if $routine ~~ Sub|Method {
+                            $m<KEY> = $key;
+                            $m.to = $pos;
+                            $oper = $routine($m);
+                            $m.delete('KEY');
+                            $oper<type> = $name;
+                            if $oper.to > $pos {
+                                $pos = $oper.to;
+                                $found_oper = True;
+                            }
+                            else {
+                                next;
+                            }
+                        }
+                        elsif $routine ~~ Code {
+                            # Here we assume that what we got was a PGE regex
+                            # routine, and we call it with the text we want
+                            # to match as an argument.
+                            my $pge-match = $routine($text.substr($pos));
+                            if $pge-match.to >= 0 {
+                                $oper.to = $pos += $pge-match.to;
+                                $found_oper = True;
+                            }
+                            else {
+                                next;
+                            }
                         }
                         else {
                             next;

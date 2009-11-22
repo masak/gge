@@ -23,22 +23,12 @@ class Algebra::Multiplication is Algebra::BinOp {
     }
 }
 
-class Algebra {
-    sub parse_term($mob) {
-        my $m = Algebra::Literal.new($mob);
-        $m.from = $mob.to;
-        $m.to = -1;
-        my $target = $m.target.substr($m.from);
-        return $m
-            unless $target ~~ / ^ <Perl6::Grammar::number> /;
-        $m.to = $m.from + $<Perl6::Grammar::number>.chars;
-        $m;
-    }
-}
-
 given GGE::OPTable.new() -> $optable {
-    $optable.newtok('term:',   :precedence<=>, :parsed(&Algebra::parse_term));
-    $optable.newtok('infix:+', :looser<term:>, :match(Algebra::Addition));
+    $optable.newtok('term:',   :precedence<=>,
+                               :parsed(&Perl6::Grammar::number),
+                               :match(Algebra::Literal));
+    $optable.newtok('infix:+', :looser<term:>,
+                               :match(Algebra::Addition));
     $optable.newtok('infix:*', :tighter<infix:+>,
                                :match(Algebra::Multiplication));
 
