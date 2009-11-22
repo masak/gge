@@ -1,0 +1,55 @@
+use v6;
+use GGE::Exp;
+use GGE::OPTable;
+
+class Algebra::Literal is GGE::Exp does ShowContents {
+    method evaluate() {
+        +$.ast;
+    }
+}
+
+class Algebra::BinOp is GGE::Exp does ShowContents {
+}
+
+class Algebra::Addition is Algebra::BinOp {
+    method evaluate() {
+        $.llist[0].evaluate() + $.llist[1].evaluate();
+    }
+}
+
+class Algebra::Multiplication is Algebra::BinOp {
+    method evaluate() {
+        $.llist[0].evaluate() * $.llist[1].evaluate();
+    }
+}
+
+class Algebra {
+    sub parse_term($mob) {
+        my $m = Algebra::Literal.new($mob);
+        $m.from = $mob.to;
+        $m.to = -1;
+        my $target = $m.target.substr($m.from);
+        return $m
+            unless $target ~~ / ^ <Perl6::Grammar::number> /;
+        $m.to = $m.from + $<Perl6::Grammar::number>.chars;
+        $m;
+    }
+}
+
+given GGE::OPTable.new() -> $optable {
+    $optable.newtok('term:',   :precedence<=>, :parsed(&Algebra::parse_term));
+    $optable.newtok('infix:+', :looser<term:>, :match(Algebra::Addition));
+    $optable.newtok('infix:*', :tighter<infix:+>,
+                               :match(Algebra::Multiplication));
+
+    while prompt('> ') -> $input {
+        my $match = $optable.parse($input);
+        if $match.to < $input.chars {
+            say 'Could not parse the arithmetic expression';
+            next;
+        }
+        my $expr = $match<expr>;
+        say $expr.evaluate;
+    }
+    say '';
+}
