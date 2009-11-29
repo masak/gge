@@ -31,10 +31,10 @@ for @test-files -> $test-file {
         my $full-description = "[$test-file:$i] $description";
         my $match;
         my $failed = 1; # RAKUDO: Manual CATCH workaround
-#        try {
+        try {
             $match = match_perl6regex($pattern, $target);
             $failed = 0;
-#        }
+        }
         if $failed {
             if $result eq 'y'|'n' {
                 nok 1, $full-description;
