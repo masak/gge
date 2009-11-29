@@ -3,7 +3,6 @@ use Test;
 
 use GGE::OPTable;
 use GGE::Match;
-use GGE::Perl6Regex;
 
 my GGE::OPTable $optable .= new;
 
@@ -143,7 +142,7 @@ optable_output_is( '^ abc', 'infix:(term:^(), term:abc)',
 sub optable_output_is($test, $expected, $msg) {
     my $output;
     if $optable.parse($test, :stop(' ;')) -> $match {
-        $output = tree($match<expr>);
+        $output = tree($match.hash-access('expr'));
         if $match.to != $test.chars {
             $output ~= " (pos={$match.to})";
         }
@@ -157,11 +156,10 @@ sub optable_output_is($test, $expected, $msg) {
 
 sub tree($match) {
     return 'null' if !$match;
-    my $r = $match<type>;
-    given $match<type> {
-        # RAKUDO: Removing the semicolon below causes a runtime error
-        when 'term:'   { ; $r ~= $match };
-        when 'term->:' { ; $r ~= $match<ident> };
+    my $r = $match.hash-access('type');
+    given $match.hash-access('type') {
+        when 'term:'   { $r ~= $match }
+        when 'term->:' { $r ~= $match.hash-access('ident') }
         $r ~= '(' ~ (join ', ', map { tree($_) }, $match.llist) ~ ')';
     }
     return $r;

@@ -59,22 +59,22 @@ class GGE::Exp::Quant is also {
     has &.backtrack = { False };
 
     method matches($string, $pos is rw) {
-        for ^self<min> {
+        for ^self.hash-access('min') {
             return False if !self[0].matches($string, $pos);
         }
-        my $n = self<min>;
-        if self<backtrack> == EAGER {
+        my $n = self.hash-access('min');
+        if self.hash-access('backtrack') == EAGER {
             &!backtrack = {
-                $n++ < self<max> && self[0].matches($string, $pos)
+                $n++ < self.hash-access('min') && self[0].matches($string, $pos)
             };
         }
         else {
             my @positions;
-            while $n++ < self<max> {
+            while $n++ < self.hash-access('min') {
                 push @positions, $pos;
                 last if !self[0].matches($string, $pos);
             }
-            if self<backtrack> == GREEDY {
+            if self.hash-access('min') == GREEDY {
                 &!backtrack = {
                     @positions && $pos = pop @positions
                 };

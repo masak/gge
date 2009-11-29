@@ -62,7 +62,7 @@ class GGE::Perl6Regex {
         my $match = $optable.parse($pattern);
         die 'Regex parse error'
             if $match.to < $pattern.chars;
-        my $expr = $match<expr>;
+        my $expr = $match.hash-access('expr');
         return self.bless(*, :regex(perl6exp($expr, {})));
     }
 
@@ -173,7 +173,7 @@ class GGE::Perl6Regex {
         my $m = GGE::Exp::Quant.new($mob);
         $m.from = $mob.to;
 
-        my $key = $mob<KEY>;
+        my $key = $mob.hash-access('KEY');
         $m.to = $m.from + $key.chars;
         my ($mod2, $mod1);
         given $m.target {
@@ -181,27 +181,27 @@ class GGE::Perl6Regex {
             $mod1   = .substr($m.to, 1);
         }
 
-        $m<min> = $key eq '+' ?? 1 !! 0;
-        $m<max> = $key eq '?' ?? 1 !! Inf;;
+        $m.hash-access('min') = $key eq '+' ?? 1 !! 0;
+        $m.hash-access('max') = $key eq '?' ?? 1 !! Inf;;
 
         if $mod2 eq ':?' {
-            $m<backtrack> = EAGER;
+            $m.hash-access('backtrack') = EAGER;
             $m.to += 2;
         }
         elsif $mod2 eq ':!' {
-            $m<backtrack> = GREEDY;
+            $m.hash-access('backtrack') = GREEDY;
             $m.to += 2;
         }
         elsif $mod1 eq '?' {
-            $m<backtrack> = EAGER;
+            $m.hash-access('backtrack') = EAGER;
             ++$m.to;
         }
         elsif $mod1 eq '!' {
-            $m<backtrack> = GREEDY;
+            $m.hash-access('backtrack') = GREEDY;
             ++$m.to;
         }
         elsif $mod1 eq ':' {
-            $m<backtrack> = NONE;
+            $m.hash-access('backtrack') = NONE;
             ++$m.to;
         }
 
@@ -212,11 +212,11 @@ class GGE::Perl6Regex {
                 ++$m.to;
             }
             # XXX: Need to generalize this into parsing several digits
-            $m<min> = $m<max> = $m.target.substr($m.to, 1);
+            $m.hash-access('min') = $m.hash-access('max') = $m.target.substr($m.to, 1);
             ++$m.to;
             if $m.target.substr($m.to, 2) eq '..' {
                 $m.to += 2;
-                $m<max> = $m.target.substr($m.to, 1);
+                $m.hash-access('max') = $m.target.substr($m.to, 1);
                 ++$m.to;
             }
             if $brackets {
@@ -237,7 +237,7 @@ class GGE::Perl6Regex {
         my $wordchars = ($target.substr($m.to) ~~ /^\w+/).Str.chars;
         my $word = $target.substr($m.to, $wordchars);
         $m.to += $wordchars;
-        $m<key> = $word;
+        $m.hash-access('key') = $word;
         $m;
     }
 
@@ -246,7 +246,7 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::Modifier $exp is rw, %pad) {
-        my $key = $exp<key>;
+        my $key = $exp.hash-access('key');
         my $temp = %pad{$key};
         %pad{$key} = 1; # XXX
         $exp[0] = perl6exp($exp[0], %pad);
@@ -267,7 +267,7 @@ class GGE::Perl6Regex {
 
     multi sub perl6exp(GGE::Exp::Quant $exp is rw, %pad) {
         $exp[0] = perl6exp($exp[0], %pad);
-        $exp<backtrack> //= %pad<ratchet> ?? NONE !! GREEDY;
+        $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE !! GREEDY;
         return $exp;
     }
 }

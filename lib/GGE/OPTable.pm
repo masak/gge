@@ -136,7 +136,9 @@ class GGE::OPTable {
                     for reverse ^$arity {
                         $oper.push( @temp[$_] );
                     }
-                    if $top<assoc> eq 'list' && $oper<type> eq @temp[1]<type> {
+                    if $top<assoc> eq 'list'
+                       && $oper.hash-access('type')
+                          eq @temp[1].hash-access('type') {
                         @temp[1].push($oper.llist[1]);
                         $oper = @temp[1];
                     }
@@ -182,15 +184,15 @@ class GGE::OPTable {
                     my $oper = $matchclass.new(:from($pos),
                                                :to($pos + $key.chars),
                                                :target($text));
-                    $oper<type> = $name;
+                    $oper.hash-access('type') = $name;
                     if $token.exists('parsed') {
                         my $routine = $token<parsed>;
                         if $routine ~~ Sub|Method {
-                            $m<KEY> = $key;
+                            $m.hash-access('KEY') = $key;
                             $m.to = $pos;
                             $oper = $routine($m);
                             $m.delete('KEY');
-                            $oper<type> = $name;
+                            $oper.hash-access('type') = $name;
                             if $oper.to > $pos {
                                 $pos = $oper.to;
                                 $found_oper = True;
@@ -342,7 +344,7 @@ class GGE::OPTable {
             }
         }
         if @termstack && ?@termstack[0] {
-            $m<expr> = @termstack[0];
+            $m.hash-access('expr') = @termstack[0];
             if $pos <= 0 {
                 $m.to = @termstack[0].to;
             }

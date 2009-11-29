@@ -50,7 +50,12 @@ class GGE::Match {
     # RAKUDO: There's a bug preventing me from using hash lookup in a
     #         postcircumfix:<{ }> method. This workaround uses the above
     #         class to put the problematic hash lookup out of reach.
-    method postcircumfix:<{ }>($key) { $!store.hash-access($key) }
+    # RAKUDO: Now there's also a bug which spews out false warnings due to
+    #         postcircumfix:<{ }> declarations. Will have to do without
+    #         this declaration until that is resolved, in order to be able
+    #         to build GGE. [perl #70922]
+  #  method postcircumfix:<{ }>($key) { $!store.hash-access($key) }
+    method hash-access($key) { $!store.hash-access($key) }
     method postcircumfix:<[ ]>($index) { $!store.array-access($index) }
 
     method set($index, $value) { $!store.array-setelem($index, $value) }
