@@ -65,16 +65,16 @@ class GGE::Exp::Quant is also {
         my $n = self.hash-access('min');
         if self.hash-access('backtrack') == EAGER {
             &!backtrack = {
-                $n++ < self.hash-access('min') && self[0].matches($string, $pos)
+                $n++ < self.hash-access('max') && self[0].matches($string, $pos)
             };
         }
         else {
             my @positions;
-            while $n++ < self.hash-access('min') {
+            while $n++ < self.hash-access('max') {
                 push @positions, $pos;
                 last if !self[0].matches($string, $pos);
             }
-            if self.hash-access('min') == GREEDY {
+            if self.hash-access('backtrack') == GREEDY {
                 &!backtrack = {
                     @positions && $pos = pop @positions
                 };
