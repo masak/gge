@@ -123,6 +123,7 @@ class GGE::Perl6Regex {
         my $target = $mob.target;
         my $pos = $mob.to;
         $pos += 2;
+        ++$pos while $target.substr($pos, 1) ~~ /\s/;
         my Str $charlist = '';
         my Bool $isrange = False;
         while True {
@@ -133,10 +134,9 @@ class GGE::Perl6Regex {
                     last;
                 }
                 when '.' {
-                    if $target.substr($pos, 2) ne '..' {
-                        continue;
-                    }
+                    continue if $target.substr($pos, 2) ne '..';
                     $pos += 2;
+                    ++$pos while $target.substr($pos, 1) ~~ /\s/;
                     $isrange = True;
                     next;
                 }
@@ -150,6 +150,7 @@ class GGE::Perl6Regex {
                 }
             }
             ++$pos;
+            ++$pos while $target.substr($pos, 1) ~~ /\s/;
         }
         my $term = GGE::Exp::EnumCharList.new($mob);
         $term.to = $pos;
