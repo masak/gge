@@ -57,6 +57,8 @@ class GGE::Perl6Regex {
                         :nows, :match(GGE::Exp::Concat));
         $optable.newtok('infix:|',   :looser<infix:>,
                         :nows, :match(GGE::Exp::Alt));
+        $optable.newtok('prefix:|',  :equiv<infix:|>,
+                        :nows, :match(GGE::Exp::Alt));
         $optable.newtok('prefix::',  :looser<infix:|>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
         my $match = $optable.parse($pattern);
@@ -265,6 +267,15 @@ class GGE::Perl6Regex {
     multi sub perl6exp(GGE::Exp::Quant $exp is rw, %pad) {
         $exp[0] = perl6exp($exp[0], %pad);
         $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE !! GREEDY;
+        return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::Alt $exp is rw, %pad) {
+        if !defined $exp[1] {
+            return perl6exp($exp[0], %pad);
+        }
+        $exp[0] = perl6exp($exp[0], %pad);
+        $exp[1] = perl6exp($exp[1], %pad);
         return $exp;
     }
 }
