@@ -85,16 +85,19 @@ class GGE::Perl6Regex {
             return parse_term_ws($mob);
         }
         my $m = GGE::Exp::Literal.new($mob);
-        $m.from = $mob.to;
         my $target = $m.target;
-        $m.to = $m.from + ($target.substr($m.from, 1) ~~ /\w/ ?? 1 !! 0);
+        $m.to += $target.substr($m.to, 1) ~~ /\w/ ?? 1 !! 0;
         $m;
     }
 
     sub parse_term_ws($mob) {
         my $m = GGE::Exp::WS.new($mob);
-        $m.from = $mob.to;
-        $m.to = $m.from;
+        # XXX: This is a fix for my lack of understanding of the relation
+        #      between $m.from and $m.pos. There is no corresponding
+        #      adjustment needed in PGE.
+        if $m.to > 0 && $m.target.substr($m.to - 1, 1) eq '#' {
+            --$m.to;
+        }
         $m.to++ while $m.target.substr($m.to, 1) ~~ /\s/;
         if $m.target.substr($m.to, 1) eq '#' {
             my $delim = "\n";
@@ -106,11 +109,10 @@ class GGE::Perl6Regex {
     }
 
     sub parse_term_backslash($mob) {
-        my $backchar = substr($mob.target, $mob.to + 1, 1);
+        my $backchar = substr($mob.target, $mob.to, 1);
         if $backchar !~~ /\w/ {
             my $m = GGE::Exp::Literal.new($mob);
-            $m.from = $mob.to;
-            $m.to = $m.from + 2;
+            ++$m.to;
             $m.make($backchar);
             return $m;
         }
@@ -122,7 +124,6 @@ class GGE::Perl6Regex {
     sub parse_enumcharclass($mob) {
         my $target = $mob.target;
         my $pos = $mob.to;
-        $pos += 2;
         ++$pos while $target.substr($pos, 1) ~~ /\s/;
         my Str $charlist = '';
         my Bool $isrange = False;
@@ -160,7 +161,6 @@ class GGE::Perl6Regex {
 
     sub parse_quoted_literal($mob) {
         my $m = GGE::Exp::Literal.new($mob);
-        $m.from = $mob.to;
 
         my $closing-quote = $m.target.index("'", $m.from + 1);
         if !defined $closing-quote {
@@ -172,10 +172,8 @@ class GGE::Perl6Regex {
 
     sub parse_quant($mob) {
         my $m = GGE::Exp::Quant.new($mob);
-        $m.from = $mob.to;
 
         my $key = $mob.hash-access('KEY');
-        $m.to = $m.from + $key.chars;
         my ($mod2, $mod1);
         given $m.target {
             $mod2   = .substr($m.to, 2);
@@ -232,9 +230,7 @@ class GGE::Perl6Regex {
 
     sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
-        $m.from = $mob.to;
         my $target = $m.target;
-        ++$m.to;
         my $wordchars = ($target.substr($m.to) ~~ /^\w+/).Str.chars;
         my $word = $target.substr($m.to, $wordchars);
         $m.to += $wordchars;
