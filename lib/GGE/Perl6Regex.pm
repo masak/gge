@@ -60,7 +60,7 @@ class GGE::Perl6Regex {
         $optable.newtok('prefix::',  :looser<infix:|>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
         my $match = $optable.parse($pattern);
-        die 'Regex parse error'
+        die 'Perl6Regex rule error'
             if $match.to < $pattern.chars;
         my $expr = $match.hash-access('expr');
         return self.bless(*, :regex(perl6exp($expr, {})));
