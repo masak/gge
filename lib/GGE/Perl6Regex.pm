@@ -41,6 +41,8 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::Newline));
         $optable.newtok('term:<[',   :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_enumcharclass));
+        $optable.newtok('term:<-',   :equiv<term:>,
+                        :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok("term:'",    :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quoted_literal));
         $optable.newtok('circumfix:[ ]', :equiv<term:>,
@@ -126,6 +128,11 @@ class GGE::Perl6Regex {
     sub parse_enumcharclass($mob) {
         my $target = $mob.target;
         my $pos = $mob.to;
+        my $key = $mob.hash-access('KEY');
+        # This is only correct as long as we don't do subrules.
+        if $key ne '<[' {
+            ++$pos;
+        }
         ++$pos while $target.substr($pos, 1) ~~ /\s/;
         my Str $charlist = '';
         my Bool $isrange = False;
@@ -156,8 +163,18 @@ class GGE::Perl6Regex {
             ++$pos while $target.substr($pos, 1) ~~ /\s/;
         }
         my $term = GGE::Exp::EnumCharList.new($mob);
-        $term.to = $pos;
         $term.make($charlist);
+        if $key eq '<-' {
+            $term.hash-access('isnegated') = True;
+            $term.hash-access('iszerowidth') = True;
+            my $subtraction = GGE::Exp::Concat.new($mob);
+            my $everything = GGE::Exp::CCShortcut.new($mob);
+            $everything.make('.');
+            $subtraction[0] = $term;
+            $subtraction[1] = $everything;
+            $term = $subtraction;
+        }
+        $term.to = $pos;
         return $term;
     }
 
