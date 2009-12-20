@@ -2,7 +2,7 @@ use v6;
 use GGE::Match;
 use GGE::Exp;
 use GGE::OPTable;
-use GGE::Cursor;
+use GGE::TreeSpider;
 
 class GGE::Perl6Regex {
     has $!regex;
@@ -74,14 +74,7 @@ class GGE::Perl6Regex {
         if $debug {
             say $!regex.structure;
         }
-        for ^$target.chars -> $from {
-            my GGE::Cursor $cursor .= new(:exp($!regex), :$target,
-                                          :pos($from), :$debug);
-            if $cursor.matches(:$debug) {
-                return GGE::Match.new(:$target, :$from, :to($cursor.pos));
-            }
-        }
-        return GGE::Match.new(:$target, :from(0), :to(-2));
+        GGE::TreeSpider.new(:$!regex, :$target, :pos(*)).crawl(:$debug);
     }
 
     sub parse_term($mob) {
