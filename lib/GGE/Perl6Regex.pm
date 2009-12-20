@@ -2,7 +2,7 @@ use v6;
 use GGE::Match;
 use GGE::Exp;
 use GGE::OPTable;
-use GGE::Cursor;
+use GGE::TreeSpider;
 
 class GGE::Perl6Regex {
     has $!regex;
@@ -57,7 +57,9 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('infix:',    :looser<postfix:*>, :assoc<list>,
                         :nows, :match(GGE::Exp::Concat));
-        $optable.newtok('infix:|',   :looser<infix:>,
+        $optable.newtok('infix:&',   :looser<infix:>,
+                        :nows, :match(GGE::Exp::Conj));
+        $optable.newtok('infix:|',   :looser<infix:&>,
                         :nows, :match(GGE::Exp::Alt));
         $optable.newtok('prefix:|',  :equiv<infix:|>,
                         :nows, :match(GGE::Exp::Alt));
@@ -74,14 +76,7 @@ class GGE::Perl6Regex {
         if $debug {
             say $!regex.structure;
         }
-        for ^$target.chars -> $from {
-            my GGE::Cursor $cursor .= new(:exp($!regex), :$target,
-                                          :pos($from), :$debug);
-            if $cursor.matches(:$debug) {
-                return GGE::Match.new(:$target, :$from, :to($cursor.pos));
-            }
-        }
-        return GGE::Match.new(:$target, :from(0), :to(-2));
+        GGE::TreeSpider.new(:$!regex, :$target, :pos(*)).crawl(:$debug);
     }
 
     sub parse_term($mob) {
@@ -291,6 +286,12 @@ class GGE::Perl6Regex {
         if !defined $exp[1] {
             return perl6exp($exp[0], %pad);
         }
+        $exp[0] = perl6exp($exp[0], %pad);
+        $exp[1] = perl6exp($exp[1], %pad);
+        return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::Conj $exp is rw, %pad) {
         $exp[0] = perl6exp($exp[0], %pad);
         $exp[1] = perl6exp($exp[1], %pad);
         return $exp;
