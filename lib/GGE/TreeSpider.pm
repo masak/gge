@@ -1,7 +1,7 @@
 use v6;
 use GGE::Exp;
 
-class GGE::Exp::RxContainer is GGE::Exp {
+class GGE::Exp::Regex is GGE::Exp {
 }
 
 class GGE::TreeSpider {
@@ -19,7 +19,7 @@ class GGE::TreeSpider {
     has          %!savepoints;
 
     submethod BUILD(GGE::Exp :$regex!, Str :$!target!, :$pos!) {
-        $!top = GGE::Exp::RxContainer.new();
+        $!top = GGE::Exp::Regex.new();
         $!top[0] = $regex;
         # RAKUDO: Smartmatch on type yields an Int, must convert to Bool
         #         manually. [perl #71462]
@@ -79,7 +79,7 @@ class GGE::TreeSpider {
                 my $index = @!nodestack.end - 1;
                 $index--
                     until @!nodestack[$index] ~~ GGE::Exp::Quant
-                                                 | GGE::Exp::RxContainer;
+                                                 | GGE::Exp::Regex;
                 my $surrounding = @!nodestack[$index];
                 %!savepoints{$surrounding.WHICH}
                     = [[@!nodestack.list], [@!padstack.list]];
