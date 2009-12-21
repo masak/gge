@@ -56,7 +56,7 @@ class GGE::Exp::Quant is GGE::Exp {
     method start($_: $, $, %pad is rw) {
         %pad<reps> = 0;
         if .hash-access('min') > 0
-           || .hash-access('max') > 0 && .hash-access('backtrack') == GREEDY {
+           || .hash-access('max') > 0 && .hash-access('backtrack') != EAGER {
             DESCEND
         }
         else {
@@ -66,7 +66,7 @@ class GGE::Exp::Quant is GGE::Exp {
 
     method succeeded($_: %pad is rw) {
         ++%pad<reps>;
-        if .hash-access('backtrack') == GREEDY
+        if .hash-access('backtrack') != EAGER
            && %pad<reps> < .hash-access('max') {
             (%pad<mempos> //= []).push(%pad<pos>);
             DESCEND
