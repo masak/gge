@@ -102,7 +102,7 @@ class GGE::Exp::Quant is GGE::Exp {
            && %pad<reps> < .hash-access('max') {
             DESCEND
         }
-        elsif $bt == GREEDY && %pad<mempos> > 1 {
+        elsif $bt == GREEDY && +%pad<mempos> {
             $pos = pop %pad<mempos>;
             MATCH
         }
