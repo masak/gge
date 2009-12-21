@@ -40,13 +40,29 @@ class GGE::TreeSpider {
             my %pad = $!last == DESCEND ?? (:pos($!pos)) !! pop @!padstack;
             my $nodename = $!current.WHAT.perl.subst(/.* '::'/, '');
             my $fragment = ($!target ~ '«END»').substr($!pos, 5);
+            if $!last == FAIL {
+                if %!savepoints.exists($!current.WHICH) {
+                    my @info = %!savepoints{$!current.WHICH}.list;
+                    %!savepoints.delete($!current.WHICH);
+                    @!nodestack = @info[0].list;
+                    @!padstack  = @info[1].list;
+                    $!current = @!nodestack[*-1];
+                    $!last = BACKTRACK;
+                    next;
+                }
+            }
+            if $!last == BACKTRACK {
+                $!pos = %pad<pos>;
+            }
             my $action = do given $!last {
                 when DESCEND   { $!current.start($!target, $!pos, %pad) }
                 when MATCH     { $!current.succeeded(%pad)              }
                 when FAIL      { $!current.failed($!pos, %pad)          }
                 when BACKTRACK { $!current.backtracked($!pos, %pad)     }
             };
-            # if $action == DESCEND && %!savepoints.exists($!current) { ... }
+            if $action == DESCEND && %!savepoints.exists($!current.WHICH) {
+                %!savepoints.delete($!current.WHICH);
+            }
             if $action != DESCEND {
                 debug sprintf '%12s matching "%-5s": %s',
                               $nodename, $fragment, $action.name;
@@ -56,8 +72,15 @@ class GGE::TreeSpider {
             if $!last == DESCEND {
                 push @!nodestack, $!current;
             }
-            # if $!last == FAIL { ... }
-            # Register savepoint
+            if $!current ~~ GGE::Exp::Quant && $action == MATCH {
+                my $index = @!nodestack.end - 1;
+                $index--
+                    until @!nodestack[$index] ~~ GGE::Exp::Quant
+                                                 | GGE::Exp::RxContainer;
+                my $surrounding = @!nodestack[$index];
+                %!savepoints{$surrounding.WHICH}
+                    = [[@!nodestack.list], [@!padstack.list]];
+            }
             if $action == DESCEND {
                 $!current = $!current[ $!current ~~ GGE::Exp::Concat
                                        ?? %pad<child> !! 0 ];
