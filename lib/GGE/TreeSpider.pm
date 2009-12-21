@@ -39,6 +39,9 @@ class GGE::TreeSpider {
         loop {
             my %pad = $!last == DESCEND ?? (:pos($!pos)) !! pop @!padstack;
             my $nodename = $!current.WHAT.perl.subst(/.* '::'/, '');
+            if $!current.?contents {
+                $nodename ~= '(' ~ $!current.contents ~ ')';
+            }
             my $fragment = ($!target ~ '«END»').substr($!pos, 5);
             if $!last == FAIL {
                 if %!savepoints.exists($!current.WHICH) {
@@ -64,7 +67,7 @@ class GGE::TreeSpider {
                 %!savepoints.delete($!current.WHICH);
             }
             if $action != DESCEND {
-                debug sprintf '%12s matching "%-5s": %s',
+                debug sprintf '%-20s matching "%-5s": %s',
                               $nodename, $fragment, $action.name;
             }
             %pad<pos> = $!pos;

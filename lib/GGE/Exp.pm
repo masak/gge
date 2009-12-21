@@ -55,8 +55,11 @@ enum GGE_BACKTRACK <
 class GGE::Exp::Quant is GGE::Exp {
     method start($_: $, $, %pad is rw) {
         %pad<reps> = 0;
-        if .hash-access('min') > 0
-           || .hash-access('max') > 0 && .hash-access('backtrack') != EAGER {
+        if .hash-access('min') > 0 {
+            DESCEND
+        }
+        elsif .hash-access('max') > 0 && .hash-access('backtrack') != EAGER {
+            (%pad<mempos> //= []).push(%pad<pos>);
             DESCEND
         }
         else {
@@ -68,7 +71,9 @@ class GGE::Exp::Quant is GGE::Exp {
         ++%pad<reps>;
         if .hash-access('backtrack') != EAGER
            && %pad<reps> < .hash-access('max') {
-            (%pad<mempos> //= []).push(%pad<pos>);
+            if %pad<reps> >= .hash-access('min') {
+                (%pad<mempos> //= []).push(%pad<pos>);
+            }
             DESCEND
         }
         else {
@@ -91,7 +96,7 @@ class GGE::Exp::Quant is GGE::Exp {
            && %pad<reps> < .hash-access('max') {
             DESCEND
         }
-        elsif $bt == GREEDY && +%pad<mempos> {
+        elsif $bt == GREEDY && %pad<mempos> > 1 {
             $pos = pop %pad<mempos>;
             MATCH
         }
