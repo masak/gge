@@ -53,6 +53,12 @@ enum GGE_BACKTRACK <
 >;
 
 class GGE::Exp::Quant is GGE::Exp {
+    method contents() {
+        my ($min, $max, $bt) = map { self.hash-access($_) },
+                                   <min max backtrack>;
+        "{$bt.name.lc} $min..$max"
+    }
+
     method start($_: $, $, %pad is rw) {
         %pad<reps> = 0;
         if .hash-access('min') > 0 {
