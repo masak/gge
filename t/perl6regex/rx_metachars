@@ -87,6 +87,8 @@ b|			bcd		/rule error/	alternation (|) - null right arg illegal
 ^ [ <[a..d]>+ & <[b..e]>+ ] $	bcd		y	conjunction (&)
 <[a..c]>+ & <[b..e]>+	bcd		y	conjunction (&)
 <[a..d]>+ & <[c..e]>+	bcd		y	conjunction (&)
+^ [ a* & .* ]	aab	/aa @ 0/	conjunction (&)
+^ [ .* & a* ]	aab	/aa @ 0/	conjunction (&)
 b&			bcd		/rule error/	conjunction (&) - null right arg illegal
 &b			bcd		/rule error/	conjunction (&) - null left arg illegal
 &			bcd		/rule error/	conjunction (&) - null both args illegal
