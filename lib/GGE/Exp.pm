@@ -126,9 +126,15 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
     my @v-codes = <000a 000b 000c 000d 0085 2028 2029>;
     my $v-whitespace = unescape @v-codes;
     my $whitespace = unescape (@h-codes, @v-codes);
-    my %shortcuts = 's' => $whitespace,
-                    'h' => $h-whitespace,
-                    'v' => $v-whitespace;
+    my %shortcuts =
+        's' => $whitespace,
+        'h' => $h-whitespace,
+        'v' => $v-whitespace,
+        'e' => "\e",
+        'f' => "\f",
+        'r' => "\r",
+        't' => "\t",
+    ;
 
     method start($string, $pos is rw, %pad) {
         my $cc-char = self.ast.substr(1);

@@ -29,6 +29,22 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:.',    :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\e',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\E',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\f',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\F',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\r',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\R',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\t',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\T',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\s',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\S',  :equiv<term:>,
