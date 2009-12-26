@@ -119,7 +119,7 @@ a|&b			a|&b		/rule error/	alternation and conjunction (|&) - parse error
 ^ \h+ $			\x0009\x0020\x00a0	y	0-255 horizontal whitespace (\h)
 ^ \V+ $			\x0009\x0020\x00a0	y	0-255 horizontal whitespace (\V)
 ^ \v+ $			\x000a\x000b\x000c\x000d\x0085	y	0-255 vertical whitespace (\v)
-^ \h+ $			\x000a\x000b\x000c\x000d\x0085	n	0-255 horizontal whitespace (\h)
+^ \H+ $			\x000a\x000b\x000c\x000d\x0085	y	0-255 vertical whitespace (\H)
 ^ \v+ $			\x0009\x0020\x00a0	n	0-255 vertical whitespace (\v)
 ^ \s+ $			\x1680\x180e\x2000\x2001\x2002\x2003\x2004\x2005\x2006\x2007\x2008\x2008\x2009\x200a\x202f\x205f\x3000	y	unicode whitespace (\s)
 ^ \h+ $			\x1680\x180e\x2000\x2001\x2002\x2003\x2004\x2005\x2006\x2007\x2008\x2008\x2009\x200a\x202f\x205f\x3000	y	unicode whitespace (\h)

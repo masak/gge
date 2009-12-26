@@ -33,6 +33,14 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\S',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\h',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\H',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\v',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\V',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\w',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\N',  :equiv<term:>,

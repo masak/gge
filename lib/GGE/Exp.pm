@@ -119,14 +119,30 @@ class GGE::Exp::Quant is GGE::Exp does Backtracking {
 }
 
 class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
+    my &unescape = -> @codes { join '', map { chr(:16($_)) }, @codes };
+    my @h-codes = <0009 0020 00a0 1680 180e 2000 2001 2002 2003 2004
+                   2005 2006 2007 2008 2008 2009 200a 202f 205f 3000>;
+    my $h-whitespace = unescape @h-codes;
+    my @v-codes = <000a 000b 000c 000d 0085 2028 2029>;
+    my $v-whitespace = unescape @v-codes;
+    my $whitespace = unescape (@h-codes, @v-codes);
+    my %shortcuts = 's' => $whitespace,
+                    'h' => $h-whitespace,
+                    'v' => $v-whitespace;
+
     method start($string, $pos is rw, %pad) {
+        my $cc-char = self.ast.substr(1);
         if $pos >= $string.chars {
             FAIL
         }
         elsif self.ast eq '.'
-           || self.ast eq '\\s' && $string.substr($pos, 1) eq ' '
-           || self.ast eq '\\S' && $string.substr($pos, 1) ne ' '
-           || self.ast eq '\\N' && !($string.substr($pos, 1) eq "\n"|"\r") {
+           || self.ast eq '\\N' && !($string.substr($pos, 1) eq "\n"|"\r")
+           || %shortcuts.exists(self.ast.substr(1))
+              && defined(%shortcuts{$cc-char}.index($string.substr($pos, 1)))
+           || $cc-char eq $cc-char.uc
+              && %shortcuts.exists($cc-char.lc)
+              && !defined(%shortcuts{$cc-char.lc}.index(
+                          $string.substr($pos, 1))) {
             ++$pos;
             MATCH
         }
