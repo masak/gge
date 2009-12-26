@@ -27,9 +27,9 @@ class GGE::Match {
         self.bless(*, |%_);
     }
 
-    multi method new(GGE::Match $match) {
+    multi method new(GGE::Match $match, :$pos) {
         defined $match ?? self.new(:target($match.target), :from($match.from),
-                                   :to($match.to))
+                                   :to($pos // $match.to))
                        !! self.new();
     }
 

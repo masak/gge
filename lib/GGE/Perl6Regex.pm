@@ -131,17 +131,69 @@ class GGE::Perl6Regex {
         $m;
     }
 
+    sub p6escapes($mob, :$pos! is copy) {
+        my $m = GGE::Match.new($mob);
+        my $target = $m.target;
+        my $backchar = $target.substr($pos + 1, 1);
+        $pos += 2;
+        my $isbracketed = $target.substr($pos, 1) eq '[';
+        $pos += $isbracketed;
+        my $base = $backchar eq 'c'|'C' ?? 10
+                !! $backchar eq 'o'|'O' ?? 8
+                !!                         16;
+        my $literal = '';
+        repeat {
+            ++$pos
+                while $pos < $target.chars && $target.substr($pos, 1) ~~ /\s/;
+            my $decnum = 0;
+            while $pos < $target.chars
+                  && defined(my $digit = '0123456789abcdef0123456789ABCDEF'\
+                          .index($target.substr($pos, 1))) {
+                $digit %= 16;
+                $decnum *= $base;
+                $decnum += $digit;
+                ++$pos;
+            }
+            my $char = chr($decnum);
+            $literal ~= $char;
+            ++$pos
+                while $pos < $target.chars && $target.substr($pos, 1) ~~ /\s/;
+        } while $target.substr($pos, 1) eq ',' && ++$pos;
+        die "Missing close bracket for \\x[...], \\o[...], or \\c[...]"
+            if $isbracketed && $target.substr($pos, 1) ne ']';
+        $pos += $isbracketed;
+        $m.make($literal);
+        $m.to = $pos - 1;
+        $m;
+    }
+
     sub parse_term_backslash($mob) {
         my $backchar = substr($mob.target, $mob.to, 1);
-        if $backchar !~~ /\w/ {
-            my $m = GGE::Exp::Literal.new($mob);
-            ++$m.to;
-            $m.make($backchar);
+        # XXX: Should really be treating \s, \v, \h, \e, \f, \r, \t et al
+        #      in the same way as \x below. The charclass information is
+        #      specific to Perl 6 regexes, and belongs here in Perl6Regex,
+        #      not in GGE::Exp. It would also follow PGE better.
+        if $backchar eq 'x'|'X'|'c'|'C'|'o'|'O' {
+            my $isnegated = $backchar eq $backchar.uc;
+            my $escapes = p6escapes($mob, :pos($mob.to - 1));
+            die 'Unable to parse \x, \c, or \o value'
+                unless $escapes;
+            # XXX: Can optimize here by special-casing on 1-elem charlist.
+            #      PGE does this.
+            my GGE::Exp $m = $isnegated ?? GGE::Exp::EnumCharList.new($mob)
+                                        !! GGE::Exp::Literal.new($mob);
+            $m.hash-access('isnegated') = $isnegated;
+            $m.make($escapes.ast);
+            $m.to = $escapes.to;
             return $m;
         }
-        else {
-            die 'Alphanumeric metacharacters are reserved';
-        }
+        die 'Alphanumeric metacharacters are reserved'
+            if $backchar ~~ /\w/;
+
+        my $m = GGE::Exp::Literal.new($mob);
+        ++$m.to;
+        $m.make($backchar);
+        return $m;
     }
 
     sub parse_enumcharclass($mob) {

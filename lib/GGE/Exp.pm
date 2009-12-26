@@ -218,6 +218,13 @@ class GGE::Exp::Modifier is GGE::Exp does ShowContents {
 }
 
 class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
+    method contents() {
+        my $zw   = self.hash-access('iszerowidth') ?? 'zw '  !! '';
+        my $neg  = self.hash-access('isnegated')   ?? 'neg ' !! '';
+        my $list = self.ast;
+        qq[$zw$neg$list]
+    }
+
     method start($string, $pos is rw, %pad) {
         if $pos >= $string.chars && !self.hash-access('iszerowidth') {
             FAIL
