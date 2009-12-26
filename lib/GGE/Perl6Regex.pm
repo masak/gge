@@ -227,10 +227,14 @@ class GGE::Perl6Regex {
                     $isrange = True;
                     next;
                 }
+                when '-' {
+                    die "perl6regex parse error: Unescaped '-' in charlist ",
+                        "(use '..' or '\\-')";
+                }
                 if $isrange {
                     $isrange = False;
                     my $fromchar = $charlist.substr(-1, 1);
-                    die 'Perl6regex parse error: backwards range ',
+                    die 'perl6regex parse error: backwards range ',
                         "$fromchar..$char not allowed"
                         if $fromchar gt $char;
                     $charlist ~= $_ for $fromchar ^.. $char;
