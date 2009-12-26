@@ -143,6 +143,10 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
         }
         elsif self.ast eq '.'
            || self.ast eq '\\N' && !($string.substr($pos, 1) eq "\n"|"\r")
+           || self.ast eq '\\w' && $string.substr($pos, 1) ~~ /\w/
+           || self.ast eq '\\W' && $string.substr($pos, 1) ~~ /\W/
+           || self.ast eq '\\d' && $string.substr($pos, 1) ~~ /\d/
+           || self.ast eq '\\D' && $string.substr($pos, 1) ~~ /\D/
            || %shortcuts.exists(self.ast.substr(1))
               && defined(%shortcuts{$cc-char}.index($string.substr($pos, 1)))
            || $cc-char eq $cc-char.uc

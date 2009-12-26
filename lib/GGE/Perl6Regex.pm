@@ -59,6 +59,12 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\w',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\W',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\d',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
+        $optable.newtok('term:\\D',  :equiv<term:>,
+                        :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\N',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\n',  :equiv<term:>,
