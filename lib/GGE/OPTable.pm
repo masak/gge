@@ -137,6 +137,7 @@ class GGE::OPTable {
                         $oper.push( @temp[$_] );
                     }
                     if $top<assoc> eq 'list'
+                       && @temp[1]
                        && $oper.hash-access('type')
                           eq @temp[1].hash-access('type') {
                         @temp[1].push($oper.llist[1]);
@@ -253,6 +254,12 @@ class GGE::OPTable {
                                 ++$circumnest;
                                 # go directly to shift
                             }
+                            elsif $topcat == GGE_OPTABLE_POSTFIX()
+                                  && $token<syncat> == GGE_OPTABLE_INFIX()
+                                                     | GGE_OPTABLE_POSTFIX() {
+                                reduce;
+                                next;
+                            }
                             elsif $topcat == $token<syncat>
                                           == GGE_OPTABLE_INFIX() {
                                 # XXX: You guessed it -- the addition of
@@ -268,10 +275,10 @@ class GGE::OPTable {
                                     next;
                                 }
                             }
-                            elsif all($topcat, $token<syncat>)
-                                  == GGE_OPTABLE_PREFIX()
-                                   | GGE_OPTABLE_INFIX()
-                                   | GGE_OPTABLE_POSTFIX() {
+                            elsif $topcat == GGE_OPTABLE_PREFIX()
+                                           | GGE_OPTABLE_INFIX()
+                                  && $token<syncat> == GGE_OPTABLE_INFIX()
+                                                     | GGE_OPTABLE_POSTFIX() {
                                 # XXX: You guessed it -- the addition of
                                 #      a hundred equals signs is kind of
                                 #      a hack.

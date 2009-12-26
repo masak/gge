@@ -139,6 +139,17 @@ for ['term:',             precedence => '=', :parsed($ident)         ],
 optable_output_is( '^ abc', 'infix:(term:^(), term:abc)',
                    'whitespace and infix:' );
 
+$optable .= new;
+
+for ['term:',             precedence => '=', :parsed($ident)           ],
+    ['infix:',            looser     => 'term:', :assoc<list>, :nows   ],
+    ['infix:&',           looser     => 'infix:', :assoc<list>, :nows  ],
+    ['prefix:|',          looser     => 'infix:&', :assoc<list>, :nows ]
+-> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+
+optable_output_is( 'a&|b', 'infix:&(term:a, prefix:|(term:b))',
+                   'infix, prefix and precedence' );
+
 sub optable_output_is($test, $expected, $msg) {
     my $output;
     if $optable.parse($test, :stop(' ;')) -> $match {
