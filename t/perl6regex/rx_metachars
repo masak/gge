@@ -102,7 +102,7 @@ a|&b			a|&b		/rule error/	alternation and conjunction (|&) - parse error
 |d |b			abc		y	leading alternation ignored
  | d | b		abc		y	leading alternation ignored
 # todo :pge<feature>
- b |  | d		abc		n	null pattern invalid
+ b |  | d		abc		/rule error/	null pattern invalid
 \pabc			pabc		/reserved/	retired metachars (\p)
 \p{InConsonant}		a		/reserved/	retired metachars (\p)
 \Pabc			Pabc		/reserved/	retired metachars (\P)

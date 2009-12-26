@@ -286,6 +286,9 @@ class GGE::Perl6Regex {
         if !defined $exp[1] {
             return perl6exp($exp[0], %pad);
         }
+        if $exp[1] ~~ GGE::Exp::WS {
+            die 'Perl6Regex rule error: nothing not allowed in alternations';
+        }
         $exp[0] = perl6exp($exp[0], %pad);
         $exp[1] = perl6exp($exp[1], %pad);
         return $exp;
