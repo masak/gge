@@ -66,7 +66,7 @@ class GGE::Perl6Regex {
         $optable.newtok('prefix::',  :looser<infix:|>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
         my $match = $optable.parse($pattern);
-        die 'Perl6Regex rule error'
+        die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
         my $expr = $match.hash-access('expr');
         return self.bless(*, :regex(perl6exp($expr, {})));
@@ -292,6 +292,9 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::Conj $exp is rw, %pad) {
+        if $exp[1] ~~ GGE::Exp::Alt && !defined $exp[1][1] {
+            die 'Perl6Regex rule error: "&|" not allowed';
+        }
         $exp[0] = perl6exp($exp[0], %pad);
         $exp[1] = perl6exp($exp[1], %pad);
         return $exp;
