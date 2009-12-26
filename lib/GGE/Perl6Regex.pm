@@ -230,6 +230,9 @@ class GGE::Perl6Regex {
                 if $isrange {
                     $isrange = False;
                     my $fromchar = $charlist.substr(-1, 1);
+                    die 'Perl6regex parse error: backwards range ',
+                        "$fromchar..$char not allowed"
+                        if $fromchar gt $char;
                     $charlist ~= $_ for $fromchar ^.. $char;
                 }
                 else {
