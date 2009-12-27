@@ -275,12 +275,20 @@ class GGE::Perl6Regex {
         my $m = GGE::Exp::Literal.new($mob);
 
         my $target = $m.target;
-        my $closing-quote = $target.index("'", $m.to);
-        if !defined $closing-quote {
-            die "No closing ' in quoted literal";
+        my $lit = '';
+        my $pos = $m.to;
+        until (my $char = $target.substr($pos, 1)) eq q['] {
+            if $char eq '\\' {
+                ++$pos;
+                $char = $target.substr($pos, 1);
+            }
+            $lit ~= $char;
+            ++$pos;
+            die "perl6regex parse error: No closing ' in quoted literal"
+                if $pos >= $target.chars;
         }
-        $m.make($target.substr($m.to, $closing-quote - $m.to));
-        $m.to = $closing-quote;
+        $m.make($lit);
+        $m.to = $pos;
         $m;
     }
 
