@@ -274,10 +274,12 @@ class GGE::Perl6Regex {
     sub parse_quoted_literal($mob) {
         my $m = GGE::Exp::Literal.new($mob);
 
-        my $closing-quote = $m.target.index("'", $m.from + 1);
+        my $target = $m.target;
+        my $closing-quote = $target.index("'", $m.to);
         if !defined $closing-quote {
             die "No closing ' in quoted literal";
         }
+        $m.make($target.substr($m.to, $closing-quote - $m.to));
         $m.to = $closing-quote;
         $m;
     }
