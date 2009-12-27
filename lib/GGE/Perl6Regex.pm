@@ -185,7 +185,7 @@ class GGE::Perl6Regex {
             my GGE::Exp $m = GGE::Exp::EnumCharList.new($mob);
             $m.hash-access('isnegated') = $isnegated;
             $m.make($charlist);
-            $m.to = $mob.to + 1;
+            $m.to = $mob.to;
             return $m;
         }
         elsif $backchar ~~ /\w/ {
