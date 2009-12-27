@@ -218,7 +218,8 @@ class GGE::Perl6Regex {
         my Str $charlist = '';
         my Bool $isrange = False;
         while True {
-            die 'No ] on that char class'
+            die "perl6regex parse error: Missing close '>' or ']>' in ",
+                "enumerated character class"
                 if $pos >= $target.chars;
             given my $char = $target.substr($pos, 1) {
                 when ']' {
