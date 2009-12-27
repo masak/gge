@@ -201,7 +201,6 @@ class GGE::Perl6Regex {
         }
 
         my $m = GGE::Exp::Literal.new($mob);
-        ++$m.to;
         $m.make($backchar);
         return $m;
     }
