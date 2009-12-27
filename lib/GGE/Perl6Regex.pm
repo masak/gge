@@ -235,6 +235,11 @@ class GGE::Perl6Regex {
                     die "perl6regex parse error: Unescaped '-' in charlist ",
                         "(use '..' or '\\-')";
                 }
+                when '\\' {
+                    ++$pos;
+                    $char = $target.substr($pos, 1);
+                    continue;
+                }
                 if $isrange {
                     $isrange = False;
                     my $fromchar = $charlist.substr(-1, 1);
