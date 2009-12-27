@@ -133,30 +133,38 @@ class GGE::Perl6Regex {
         my $backchar = $target.substr($pos + 1, 1);
         $pos += 2;
         my $isbracketed = $target.substr($pos, 1) eq '[';
-        $pos += $isbracketed;
         my $base = $backchar eq 'c'|'C' ?? 10
                 !! $backchar eq 'o'|'O' ?? 8
                 !!                         16;
         my $literal = '';
-        repeat {
-            ++$pos
-                while $pos < $target.chars && $target.substr($pos, 1) ~~ /\s/;
+        $pos += $isbracketed;
+        my &readnum = {
             my $decnum = 0;
             while $pos < $target.chars
-                  && defined(my $digit = '0123456789abcdef0123456789ABCDEF'\
+                  && defined(
+                       my $digit = '0123456789abcdef0123456789ABCDEF'\
                           .index($target.substr($pos, 1))) {
                 $digit %= 16;
                 $decnum *= $base;
                 $decnum += $digit;
                 ++$pos;
             }
-            my $char = chr($decnum);
-            $literal ~= $char;
-            ++$pos
-                while $pos < $target.chars && $target.substr($pos, 1) ~~ /\s/;
-        } while $target.substr($pos, 1) eq ',' && ++$pos;
-        die "Missing close bracket for \\x[...], \\o[...], or \\c[...]"
-            if $isbracketed && $target.substr($pos, 1) ne ']';
+            $literal ~= chr($decnum);
+        };
+        if $isbracketed {
+            repeat {
+                ++$pos while $pos < $target.chars
+                             && $target.substr($pos, 1) ~~ /\s/;
+                readnum();
+                ++$pos while $pos < $target.chars
+                             && $target.substr($pos, 1) ~~ /\s/;
+            } while $target.substr($pos, 1) eq ',' && ++$pos;
+            die "Missing close bracket for \\x[...], \\o[...], or \\c[...]"
+                if $target.substr($pos, 1) ne ']';
+        }
+        else {
+            readnum();
+        }
         $pos += $isbracketed;
         $m.make($literal);
         $m.to = $pos - 1;
