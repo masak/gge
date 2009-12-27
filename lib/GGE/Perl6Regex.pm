@@ -7,6 +7,20 @@ use GGE::TreeSpider;
 class GGE::Perl6Regex {
     has $!regex;
 
+    my &unescape = -> @codes { join '', map { chr(:16($_)) }, @codes };
+    my $h-whitespace = unescape <0009 0020 00a0 1680 180e 2000 2001 2002 2003
+                                 2004 2005 2006 2007 2008 2008 2009 200a 202f
+                                 205f 3000>;
+    my $v-whitespace = unescape <000a 000b 000c 000d 0085 2028 2029>;
+    my %esclist =
+        'h' => $h-whitespace,
+        'v' => $v-whitespace,
+        'e' => "\e",
+        'f' => "\f",
+        'r' => "\r",
+        't' => "\t",
+    ;
+
     method new($pattern) {
         my $optable = GGE::OPTable.new();
         $optable.newtok('term:',     :precedence('='),
@@ -29,41 +43,17 @@ class GGE::Perl6Regex {
                         :match(GGE::Exp::Anchor));
         $optable.newtok('term:.',    :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\e',  :equiv<term:>,
+        $optable.newtok('term:\\d',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\E',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\f',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\F',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\r',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\R',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\t',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\T',  :equiv<term:>,
+        $optable.newtok('term:\\D',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\s',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\S',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\h',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\H',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\v',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\V',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\w',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\W',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\d',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\D',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\N',  :equiv<term:>,
                         :match(GGE::Exp::CCShortcut));
@@ -175,12 +165,9 @@ class GGE::Perl6Regex {
 
     sub parse_term_backslash($mob) {
         my $backchar = substr($mob.target, $mob.to, 1);
-        # XXX: Should really be treating \s, \v, \h, \e, \f, \r, \t et al
-        #      in the same way as \x below. The charclass information is
-        #      specific to Perl 6 regexes, and belongs here in Perl6Regex,
-        #      not in GGE::Exp. It would also follow PGE better.
-        if $backchar eq 'x'|'X'|'c'|'C'|'o'|'O' {
-            my $isnegated = $backchar eq $backchar.uc;
+        my $isnegated = $backchar eq $backchar.uc;
+        $backchar .= lc;
+        if $backchar eq 'x'|'c'|'o' {
             my $escapes = p6escapes($mob, :pos($mob.to - 1));
             die 'Unable to parse \x, \c, or \o value'
                 unless $escapes;
@@ -193,8 +180,17 @@ class GGE::Perl6Regex {
             $m.to = $escapes.to;
             return $m;
         }
-        die 'Alphanumeric metacharacters are reserved'
-            if $backchar ~~ /\w/;
+        elsif %esclist.exists($backchar) {
+            my $charlist = %esclist{$backchar};
+            my GGE::Exp $m = GGE::Exp::EnumCharList.new($mob);
+            $m.hash-access('isnegated') = $isnegated;
+            $m.make($charlist);
+            $m.to = $mob.to + 1;
+            return $m;
+        }
+        elsif $backchar ~~ /\w/ {
+            die 'Alphanumeric metacharacters are reserved';
+        }
 
         my $m = GGE::Exp::Literal.new($mob);
         ++$m.to;
