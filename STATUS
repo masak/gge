@@ -12,8 +12,9 @@ The OPTable tests were next. Only one test was marked TODO in there; it
 depends on the :parsed argument accepting a GGE::Perl6Regex object as its
 value. (No real obstacle to that one; just haven't found it necessary.)
 
-All tests pass in rx_metachars. Currently, work is ongoing in rx_charclass,
-with no real obstacles in sight.
+All tests pass in rx_metachars. A few tests are marked TODO in rx_charclass,
+having to do with double-quoted literals. Work is currently ongoing in
+rx_modifiers.
 
 There are two features I can see that need to be implemented for the rest
 of the tests to pass. The first is some kind of stacking of TreeSpider
@@ -27,9 +28,9 @@ name          tests status
 rx_quantifiers  179 DONE (a few todo tests remain)
 t/03-optable.t   42 DONE (one todo test remains)
 rx_metachars    238 DONE
-rx_charclass     63 in progress
+rx_charclass     63 DONE (a few todo tests remain)
+rx_modifiers    102 in progress
 
-rx_modifiers    102 to be done
 rx_captures      48 to be done
 rx_subrules      60 to be done
 rx_backtrack     23 to be done
