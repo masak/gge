@@ -73,6 +73,8 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('postfix:?', :equiv<postfix:*>,
                         :parsed(&GGE::Perl6Regex::parse_quant));
+        $optable.newtok('postfix::', :equiv<postfix:*>,
+                        :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('postfix:**', :equiv<postfix:*>,
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('infix:',    :looser<postfix:*>, :assoc<list>,
@@ -302,8 +304,23 @@ class GGE::Perl6Regex {
             $mod1   = .substr($m.to, 1);
         }
 
-        $m.hash-access('min') = $key eq '+' ?? 1 !! 0;
-        $m.hash-access('max') = $key eq '?' ?? 1 !! Inf;;
+        $m.hash-access('min') = 1;
+        if $key eq '*' | '?' {
+            $m.hash-access('min') = 0;
+        }
+
+        $m.hash-access('max') = 1;
+        if $key eq '*' | '+' | '**' {
+            $m.hash-access('max') = Inf;
+        }
+
+        #   The postfix:<:> operator may bring us here when it's really a
+        #   term:<::> term.  So, we check for that here and fail this match
+        #   if we really have a cut term.
+        if $key eq ':' && $mod1 eq ':' {
+            --$m.to;
+            return $m;
+        }
 
         if $mod2 eq ':?' {
             $m.hash-access('backtrack') = EAGER;
