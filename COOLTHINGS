@@ -18,7 +18,7 @@ In order of increasing ambitiousness:
 
 Basically, a clone of the debugging feature in Damian Conway's
 Regexp::Grammars. This is possible because GGE can easily be made to contain
-hooks in the right places for debugging.
+hooks in the right places for debug output.
 
 = A Web.pm grammar debugger
 
@@ -28,7 +28,7 @@ to match the input text. Specifically, the user will see where the match
 *fails*, which is something that is missing from the current set of tools.
 
 The applications below also require that we have a fully operational Perl
-6 parser on top of GGE.
+6 parser atop GGE.
 
 = A Perl 6 macro preprocessor
 
@@ -57,7 +57,7 @@ keeps track of coverage information.
 
 As long as we have a runtime, we might as well construct it so that it
 can be rewinded and fast-forwarded at will. This is a goal only reached
-a few times in computer history? Wondering why that variable got the
+a few times in computer history. Wondering why that variable got the
 value it did? No need to re-run the program; just rewind it to its last
-assignment. Changed a value in the interactive prompt? No prob; we'll
-just re-run things from that point onwards.
+assignment. Changed a value at some past point in the running history? No
+prob; we'll just re-run things from that point onwards.
