@@ -65,6 +65,8 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok("term:'",    :equiv<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quoted_literal));
+        $optable.newtok('term:::',   :equiv<term:>,
+                        :nows, :match(GGE::Exp::Cut));
         $optable.newtok('circumfix:[ ]', :equiv<term:>,
                         :match(GGE::Exp::Group));
         $optable.newtok('postfix:*', :looser<term:>,
@@ -106,13 +108,24 @@ class GGE::Perl6Regex {
             return parse_term_ws($mob);
         }
         my $m = GGE::Exp::Literal.new($mob);
+        my $pos = $mob.to;
         my $target = $m.target;
-        $m.to += $target.substr($m.to, 1) ~~ /\w/ ?? 1 !! 0;
+        while $target.substr($pos, 1) ~~ /\w/ {
+            ++$pos;
+        }
+        if $pos - $mob.to > 1 {
+            --$pos;
+        }
+        if $pos == $mob.to {
+            return $m;  # i.e. fail
+        }
+        $m.to = $pos;
         $m;
     }
 
     sub parse_term_ws($mob) {
         my $m = GGE::Exp::WS.new($mob);
+        $m.to = $mob.to;
         # XXX: This is a fix for my lack of understanding of the relation
         #      between $m.from and $m.pos. There is no corresponding
         #      adjustment needed in PGE.
@@ -278,7 +291,7 @@ class GGE::Perl6Regex {
 
         my $target = $m.target;
         my $lit = '';
-        my $pos = $m.to;
+        my $pos = $mob.to;
         until (my $char = $target.substr($pos, 1)) eq q['] {
             if $char eq '\\' {
                 ++$pos;
@@ -300,8 +313,8 @@ class GGE::Perl6Regex {
         my $key = $mob.hash-access('KEY');
         my ($mod2, $mod1);
         given $m.target {
-            $mod2   = .substr($m.to, 2);
-            $mod1   = .substr($m.to, 1);
+            $mod2   = .substr($mob.to, 2);
+            $mod1   = .substr($mob.to, 1);
         }
 
         $m.hash-access('min') = 1;
@@ -318,10 +331,10 @@ class GGE::Perl6Regex {
         #   term:<::> term.  So, we check for that here and fail this match
         #   if we really have a cut term.
         if $key eq ':' && $mod1 eq ':' {
-            --$m.to;
             return $m;
         }
 
+        $m.to = $mob.to;
         if $mod2 eq ':?' {
             $m.hash-access('backtrack') = EAGER;
             $m.to += 2;
@@ -370,9 +383,11 @@ class GGE::Perl6Regex {
     sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
         my $target = $m.target;
-        my $wordchars = ($target.substr($m.to) ~~ /^\w+/).Str.chars;
-        my $word = $target.substr($m.to, $wordchars);
-        $m.to += $wordchars;
+        my $word = ($target.substr($m.to) ~~ /^\w+/).Str;
+        my $wordchars = $word.chars;
+        return $m   # i.e. fail
+            unless $wordchars;
+        $m.to = $mob.to + $wordchars;
         $m.hash-access('key') = $word;
         $m;
     }

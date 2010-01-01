@@ -13,13 +13,17 @@ enum Action <
     DESCEND
     MATCH
     FAIL
+    FAIL_GROUP
     BACKTRACK
 >;
+
+role Backtracking {}
 
 class GGE::Exp is GGE::Match {
     method start($, $, %) { MATCH }
     method succeeded($, %) { MATCH }
     method failed($, %) { FAIL }
+    method failed-group($, %) { FAIL_GROUP }
 
     method structure($indent = 0) {
         my $contents
@@ -51,8 +55,6 @@ enum GGE_BACKTRACK <
     EAGER
     NONE
 >;
-
-role Backtracking {}
 
 class GGE::Exp::Quant is GGE::Exp does Backtracking {
     method contents() {
@@ -281,4 +283,11 @@ class GGE::Exp::WS is GGE::Exp {
 
 class GGE::Exp::Group is GGE::Exp {
     method start($, $, %) { DESCEND }
+    method failed-group($, %) { FAIL }
+}
+
+class GGE::Exp::Cut is GGE::Exp does Backtracking {
+    method backtracked($pos, %pad) {
+        FAIL_GROUP
+    }
 }

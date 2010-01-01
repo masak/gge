@@ -195,7 +195,7 @@ class GGE::OPTable {
                             $m.delete('KEY');
                             $oper.hash-access('type') = $name;
                             $oper.from = $pos;
-                            if $oper.to > $pos {
+                            if ?$oper {
                                 $pos = $oper.to;
                                 $found_oper = True;
                             }

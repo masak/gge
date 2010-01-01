@@ -62,10 +62,12 @@ class GGE::TreeSpider {
                     $!pos = %pad<pos>;
                 }
                 my $action = do given $!last {
-                    when DESCEND   { $!current.start($!target, $!pos, %pad) }
-                    when MATCH     { $!current.succeeded($!pos, %pad)       }
-                    when FAIL      { $!current.failed($!pos, %pad)          }
-                    when BACKTRACK { $!current.backtracked($!pos, %pad)     }
+                    when DESCEND    { $!current.start($!target, $!pos, %pad) }
+                    when MATCH      { $!current.succeeded($!pos, %pad)       }
+                    when FAIL       { $!current.failed($!pos, %pad)          }
+                    when BACKTRACK  { $!current.backtracked($!pos, %pad)     }
+                    when FAIL_GROUP { $!current.failed-group($!pos, %pad)    }
+                    when *          { die 'Unknown action ', $!last.name     }
                 };
                 if $action == DESCEND && %!savepoints.exists($!current.WHICH) {
                     %!savepoints.delete($!current.WHICH);

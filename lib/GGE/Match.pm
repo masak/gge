@@ -29,7 +29,7 @@ class GGE::Match {
 
     multi method new(GGE::Match $match, :$pos) {
         defined $match ?? self.new(:target($match.target), :from($match.from),
-                                   :to($pos // $match.to))
+                                   :to(-1))
                        !! self.new();
     }
 
