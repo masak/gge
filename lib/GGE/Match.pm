@@ -84,9 +84,8 @@ class GGE::Match {
 
     method ident() {
         my $mob = self.new(self);
-        $mob.from = self.to;
         my $target = $mob.target;
-        my $pos = $mob.to;
+        my $pos = self.to;
         if $target.substr($pos, 1) ~~ /<alpha>/ {
             ++$pos while $pos < $target.chars
                          && $target.substr($pos, 1) ~~ /\w/;
