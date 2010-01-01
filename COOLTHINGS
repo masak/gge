@@ -5,8 +5,12 @@ runtime.
 
 That dream still hasn't come true, though. GGE is being built with the
 explicit purpose of showing what can be done when Perl 6 can read and
-modify Perl 6 on the syntax tree level. Like proto, it's more of a
-proof-of-concept than a long-term solution.
+modify Perl 6 on the syntax tree level. Like proto, GGE's more of a
+proof-of-concept than a long-term solution. Specifically, the feature
+provided by GGE (matching on text and returning a reliable AST)
+should be probided by any sufficiently advanced Perl 6 implementation,
+since "grammatical introspection" is one of the big selling-points of
+Perl 6. Until that day, though, GGE helps us probe ahead.
 
 The purpose of this file is to share a bit of the enthusiasm, by listing
 the set of possible applications that become possible with a fully
