@@ -34,13 +34,21 @@ class GGE::Exp is GGE::Match {
     method failed-rule($, %) { FAIL_RULE }
 
     method structure($indent = 0) {
-        my $contents
-            = join ' ',
-                (defined self.?contents ?? " ('{self.contents}')" !! ()),
-                self.llist
-                  ?? "[{ map { "\n{$_.structure($indent + 1)}" }, self.llist }"
-                     ~ "\n{'  ' x $indent}]"
-                  !! '';
+        # RAKUDO: The below was originally written as a map, but there's
+        #         a bug somewhere in &map and lexical pads. The workaround
+        #         is to write it as a for loop.
+        my $inside = '';
+        if self.llist {
+            for self.llist {
+                $inside ~= "\n" ~ $_.structure($indent + 1);
+            }
+            $inside = "[$inside\n" ~ '  ' x $indent ~ ']';
+        }
+        my $contents = '';
+        if defined self.?contents {
+            $contents = " ('{self.contents}') ";
+        }
+        $contents ~= $inside;
         '  ' x $indent ~ self.WHAT.perl.subst(/^.*':'/, '') ~ $contents;
     }
 }
