@@ -67,6 +67,8 @@ class GGE::Perl6Regex {
                         :parsed(&GGE::Perl6Regex::parse_quoted_literal));
         $optable.newtok('term:::',   :equiv<term:>,
                         :nows, :match(GGE::Exp::Cut));
+        $optable.newtok('term::::',  :equiv<term:>,
+                        :nows, :match(GGE::Exp::Cut));
         $optable.newtok('circumfix:[ ]', :equiv<term:>,
                         :match(GGE::Exp::Group));
         $optable.newtok('postfix:*', :looser<term:>,
@@ -383,7 +385,7 @@ class GGE::Perl6Regex {
     sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
         my $target = $m.target;
-        my $word = ($target.substr($m.to) ~~ /^\w+/).Str;
+        my $word = ($target.substr($mob.to) ~~ /^\w+/).Str;
         my $wordchars = $word.chars;
         return $m   # i.e. fail
             unless $wordchars;
@@ -440,6 +442,18 @@ class GGE::Perl6Regex {
         }
         $exp[0] = perl6exp($exp[0], %pad);
         $exp[1] = perl6exp($exp[1], %pad);
+        return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::Group $exp is rw, %pad) {
+        $exp[0] = perl6exp($exp[0], %pad);
+        return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::Cut $exp is rw, %pad) {
+        $exp.hash-access('cutmark') =
+               $exp.ast eq '::'  ?? CUT_GROUP
+            !!                      CUT_RULE;
         return $exp;
     }
 }

@@ -14,16 +14,23 @@ enum Action <
     MATCH
     FAIL
     FAIL_GROUP
+    FAIL_RULE
     BACKTRACK
 >;
 
 role Backtracking {}
+
+enum Cut <
+    CUT_GROUP
+    CUT_RULE
+>;
 
 class GGE::Exp is GGE::Match {
     method start($, $, %) { MATCH }
     method succeeded($, %) { MATCH }
     method failed($, %) { FAIL }
     method failed-group($, %) { FAIL_GROUP }
+    method failed-rule($, %) { FAIL_RULE }
 
     method structure($indent = 0) {
         my $contents
@@ -288,6 +295,11 @@ class GGE::Exp::Group is GGE::Exp {
 
 class GGE::Exp::Cut is GGE::Exp does Backtracking {
     method backtracked($pos, %pad) {
-        FAIL_GROUP
+        if self.hash-access('cutmark') == CUT_GROUP {
+            FAIL_GROUP
+        }
+        else {
+            FAIL_RULE
+        }
     }
 }

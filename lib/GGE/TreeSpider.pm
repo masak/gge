@@ -3,6 +3,7 @@ use GGE::Exp;
 
 class GGE::Exp::Regex is GGE::Exp does Backtracking {
     method start($, $, %) { DESCEND }
+    method failed-rule($, %) { FAIL }
 }
 
 class GGE::TreeSpider {
@@ -67,6 +68,7 @@ class GGE::TreeSpider {
                     when FAIL       { $!current.failed($!pos, %pad)          }
                     when BACKTRACK  { $!current.backtracked($!pos, %pad)     }
                     when FAIL_GROUP { $!current.failed-group($!pos, %pad)    }
+                    when FAIL_RULE  { $!current.failed-rule($!pos, %pad)     }
                     when *          { die 'Unknown action ', $!last.name     }
                 };
                 if $action == DESCEND && %!savepoints.exists($!current.WHICH) {
