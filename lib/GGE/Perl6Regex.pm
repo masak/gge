@@ -390,12 +390,22 @@ class GGE::Perl6Regex {
     sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
         my $target = $m.target;
-        my $word = ($target.substr($mob.to) ~~ /^\w+/).Str;
+        my $pos = $mob.to;
+        my $word = ($target.substr($pos) ~~ /^\w+/).Str;
         my $wordchars = $word.chars;
+        my $value = 1;
         return $m   # i.e. fail
             unless $wordchars;
-        $m.to = $mob.to + $wordchars;
+        $pos += $wordchars;
+        $m.make($value);
+        if $target.substr($pos, 1) eq '(' {
+            ++$pos;
+            my $closing-paren-pos = $target.index(')', $pos);
+            $m.make($target.substr($pos, $closing-paren-pos - $pos));
+            $pos = $closing-paren-pos + 1;
+        }
         $m.hash-access('key') = $word;
+        $m.to = $pos;
         $m;
     }
 
@@ -409,7 +419,7 @@ class GGE::Perl6Regex {
             $key = 'ignorecase';
         }
         my $temp = %pad{$key};
-        %pad{$key} = 1; # XXX
+        %pad{$key} = $exp.ast;
         $exp[0] = perl6exp($exp[0], %pad);
         %pad{$key} = $temp;
         return $exp;

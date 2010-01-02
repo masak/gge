@@ -47,10 +47,10 @@ class GGE::Exp is GGE::Match {
 
 class GGE::Exp::Literal is GGE::Exp does ShowContents {
     method start($string, $pos is rw, %pad) {
+        my $value = ~self.ast;
         if $pos < $string.chars
            && (self.hash-access('ignorecase')
-                 && $string.substr($pos, (my $value = ~self.ast).chars).lc
-                    eq $value.lc
+                 && $string.substr($pos, $value.chars).lc eq $value.lc
                || $string.substr($pos, $value.chars) eq $value) {
             $pos += $value.chars;
             MATCH
@@ -210,6 +210,10 @@ class GGE::Exp::Concat is GGE::Exp does MultiChild {
 }
 
 class GGE::Exp::Modifier is GGE::Exp does ShowContents {
+    method contents() {
+        self.hash-access('key');
+    }
+
     method start($, $, %) { DESCEND }
 }
 
