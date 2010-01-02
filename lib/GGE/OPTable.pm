@@ -277,6 +277,7 @@ class GGE::OPTable {
                             }
                             elsif $topcat == GGE_OPTABLE_PREFIX()
                                            | GGE_OPTABLE_INFIX()
+                                           | GGE_OPTABLE_CLOSE()
                                   && $token<syncat> == GGE_OPTABLE_INFIX()
                                                      | GGE_OPTABLE_POSTFIX() {
                                 # XXX: You guessed it -- the addition of

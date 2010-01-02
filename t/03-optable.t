@@ -150,6 +150,17 @@ for ['term:',             precedence => '=', :parsed($ident)           ],
 optable_output_is( 'a&|b', 'infix:&(term:a, prefix:|(term:b))',
                    'infix, prefix and precedence' );
 
+$optable .= new;
+
+for ['term:',         precedence => '=', :parsed($ident)           ],
+    ['infix:|',       looser     => 'term:',                       ],
+    ['circumfix:[ ]', equiv      => 'term:', :nows                 ]
+-> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+
+optable_output_is( '[a]|b', 'infix:|(circumfix:[ ](term:a), term:b)',
+                   'infix and circumfix' );
+
+
 sub optable_output_is($test, $expected, $msg) {
     my $output;
     if $optable.parse($test, :stop(' ;')) -> $match {
