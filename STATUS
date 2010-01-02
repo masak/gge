@@ -13,8 +13,9 @@ depends on the :parsed argument accepting a GGE::Perl6Regex object as its
 value. (No real obstacle to that one; just haven't found it necessary.)
 
 All tests pass in rx_metachars. A few tests are marked TODO in rx_charclass,
-having to do with double-quoted literals. Work is currently ongoing in
-rx_modifiers.
+having to do with double-quoted literals. The test marked TODO in rx_backtrack
+is marked TODO in PGE as well, and looks suspicious to boot. Work is currently
+ongoing in rx_modifiers.
 
 There are two features I can see that need to be implemented for the rest
 of the tests to pass. The first is some kind of stacking of TreeSpider
@@ -29,11 +30,11 @@ rx_quantifiers  179 DONE (a few todo tests remain)
 t/03-optable.t   42 DONE (one todo test remains)
 rx_metachars    238 DONE
 rx_charclass     63 DONE (a few todo tests remain)
+rx_backtrack     23 DONE (one todo test remains)
 rx_modifiers    102 in progress
 
 rx_captures      48 to be done
 rx_subrules      60 to be done
-rx_backtrack     23 to be done
 rx_lookarounds   33 to be done
 rx_goal          11 to be done
 rx_syntax        33 to be done
@@ -51,6 +52,7 @@ Perl 6 rule features implemented
 * character classes (., \d, \w, \s, \n, \e, \f, \r, \t, \x[hhh], \o[nnn])
 * anchors (^, $, ^^, $$, \b, \b)
 * \c[...] and \C[...]
+* cut operators (:, ::, :::, <commit>)
 
 
 Perl 6 rule features to-do
@@ -73,7 +75,6 @@ Perl 6 rule features to-do
 * embedded closures ({{ puts "hello" }})
 * :lang() modifier
 * firstchar/nextchar optimizations
-* cut operators (:, ::, :::, <commit>)
 * lookbehind according to S05 definition 
 * <cut> assertion
 * versions of <commit> and cuts that release backtracking state

@@ -5,9 +5,10 @@ use GGE;
 sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() } #' (vim fix)
 
 my @test-files = <
-    backtrack
+    modifiers
     metachars
     quantifiers
+    backtrack
     charclass
 >;
 
