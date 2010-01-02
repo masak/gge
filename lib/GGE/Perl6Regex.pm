@@ -426,7 +426,10 @@ class GGE::Perl6Regex {
         if $key eq 'i' {
             $key = 'ignorecase';
         }
-        my $temp = %pad{$key};
+        # RAKUDO: Looks odd with the '// undef', doesn't it? Well, without
+        #         it, things blow up badly if we try to inspect the value
+        #         of a hash miss.
+        my $temp = %pad{$key} // undef;
         %pad{$key} = $exp.ast;
         $exp[0] = perl6exp($exp[0], %pad);
         %pad{$key} = $temp;
