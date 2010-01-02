@@ -69,8 +69,12 @@ class GGE::Perl6Regex {
                         :nows, :match(GGE::Exp::Cut));
         $optable.newtok('term::::',  :equiv<term:>,
                         :nows, :match(GGE::Exp::Cut));
+        $optable.newtok('term:<commit>', :equiv<term:>,
+                        :nows, :match(GGE::Exp::Cut));
         $optable.newtok('circumfix:[ ]', :equiv<term:>,
                         :match(GGE::Exp::Group));
+        $optable.newtok('circumfix:( )', :equiv<term:>,
+                        :match(GGE::Exp::CGroup));
         $optable.newtok('postfix:*', :looser<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('postfix:+', :equiv<postfix:*>,
@@ -353,7 +357,7 @@ class GGE::Perl6Regex {
             $m.hash-access('backtrack') = GREEDY;
             ++$m.to;
         }
-        elsif $mod1 eq ':' {
+        elsif $mod1 eq ':' || $key eq ':' {
             $m.hash-access('backtrack') = NONE;
             ++$m.to;
         }
@@ -450,10 +454,16 @@ class GGE::Perl6Regex {
         return $exp;
     }
 
+    multi sub perl6exp(GGE::Exp::CGroup $exp is rw, %pad) {
+        $exp[0] = perl6exp($exp[0], %pad);
+        return $exp;
+    }
+
     multi sub perl6exp(GGE::Exp::Cut $exp is rw, %pad) {
         $exp.hash-access('cutmark') =
                $exp.ast eq '::'  ?? CUT_GROUP
-            !!                      CUT_RULE;
+            !! $exp.ast eq ':::' ?? CUT_RULE
+            !!                      CUT_MATCH;
         return $exp;
     }
 }

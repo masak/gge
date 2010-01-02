@@ -23,6 +23,7 @@ role Backtracking {}
 enum Cut <
     CUT_GROUP
     CUT_RULE
+    CUT_MATCH
 >;
 
 class GGE::Exp is GGE::Match {
@@ -289,6 +290,11 @@ class GGE::Exp::WS is GGE::Exp {
 }
 
 class GGE::Exp::Group is GGE::Exp {
+    method start($, $, %) { DESCEND }
+    method failed-group($, %) { FAIL }
+}
+
+class GGE::Exp::CGroup is GGE::Exp {
     method start($, $, %) { DESCEND }
     method failed-group($, %) { FAIL }
 }
