@@ -391,9 +391,17 @@ class GGE::Perl6Regex {
         my $m = GGE::Exp::Modifier.new($mob);
         my $target = $m.target;
         my $pos = $mob.to;
+        my $value = 1;
+        my $end-of-num-pos = $pos;
+        while $target.substr($end-of-num-pos, 1) ~~ /\d/ {
+            ++$end-of-num-pos;
+        }
+        if $end-of-num-pos > $pos {
+            $value = $target.substr($pos, $end-of-num-pos - $pos);
+            $pos = $end-of-num-pos;
+        }
         my $word = ($target.substr($pos) ~~ /^\w+/).Str;
         my $wordchars = $word.chars;
-        my $value = 1;
         return $m   # i.e. fail
             unless $wordchars;
         $pos += $wordchars;
