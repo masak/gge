@@ -223,6 +223,7 @@ class GGE::Perl6Regex {
 
         my $m = GGE::Exp::Literal.new($mob);
         $m.make($backchar);
+        $m.to = $mob.to + 1;
         return $m;
     }
 
