@@ -3,7 +3,6 @@ use GGE::Exp;
 
 class GGE::Exp::Regex is GGE::Exp does Backtracking {
     method start($, $, %) { DESCEND }
-    method failed-rule($, %) { FAIL }
 }
 
 class GGE::TreeSpider {
@@ -108,6 +107,9 @@ class GGE::TreeSpider {
                     pop @!padstack;
                 }
                 $!last = $action;
+            }
+            if $!last == FAIL_RULE {
+                last;
             }
             if $!last == MATCH {
                 return GGE::Match.new(:target($!target),
