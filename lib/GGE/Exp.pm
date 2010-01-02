@@ -48,7 +48,10 @@ class GGE::Exp is GGE::Match {
 class GGE::Exp::Literal is GGE::Exp does ShowContents {
     method start($string, $pos is rw, %pad) {
         if $pos < $string.chars
-           && $string.substr($pos, (my $value = ~self.ast).chars) eq $value {
+           && (self.hash-access('ignorecase')
+                 && $string.substr($pos, (my $value = ~self.ast).chars).lc
+                    eq $value.lc
+               || $string.substr($pos, $value.chars) eq $value) {
             $pos += $value.chars;
             MATCH
         }

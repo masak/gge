@@ -405,6 +405,9 @@ class GGE::Perl6Regex {
 
     multi sub perl6exp(GGE::Exp::Modifier $exp is rw, %pad) {
         my $key = $exp.hash-access('key');
+        if $key eq 'i' {
+            $key = 'ignorecase';
+        }
         my $temp = %pad{$key};
         %pad{$key} = 1; # XXX
         $exp[0] = perl6exp($exp[0], %pad);
@@ -465,6 +468,11 @@ class GGE::Perl6Regex {
                $exp.ast eq '::'  ?? CUT_GROUP
             !! $exp.ast eq ':::' ?? CUT_RULE
             !!                      CUT_MATCH;
+        return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::Literal $exp is rw, %pad) {
+        $exp.hash-access('ignorecase') = %pad<ignorecase>;
         return $exp;
     }
 }
