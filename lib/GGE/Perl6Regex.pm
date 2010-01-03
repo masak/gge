@@ -8,7 +8,10 @@ class GGE::Exp::WS is GGE::Exp {
     # XXX: This class should really derive from GGE::Exp::Subrule, but
     #      that class hasn't been implemented yet, so...
     method start($string, $pos is rw, %pos) {
-        if $string.substr($pos, 1) ~~ /\s/ {
+        if $pos == 0 || $pos >= $string.chars {
+            MATCH
+        }
+        elsif $string.substr($pos, 1) ~~ /\s/ {
             ++$pos while $string.substr($pos, 1) ~~ /\s/;
             MATCH
         }
