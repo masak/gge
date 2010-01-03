@@ -46,7 +46,9 @@ class GGE::TreeSpider {
                 if $!current.?contents {
                     $nodename ~= '(' ~ $!current.contents ~ ')';
                 }
-                my $fragment = ($!target ~ '«END»').substr($!pos, 5);
+                my $fragment = ($!target ~ '«END»').substr($!pos, 5)\
+                               .trans( [ "\n", "\t" ] => [ "\\n", "\\t" ] )\
+                               .substr(0, 5);
                 if $!last == FAIL {
                     if %!savepoints.exists($!current.WHICH)
                        && +%!savepoints{$!current.WHICH} {
