@@ -39,3 +39,6 @@
   =abc		abcdef		/LHS of alias must be lvalue/	bare : after ws
 [ =a]		abcdef		/LHS of alias must be lvalue/	bare : after [+sp
 [a| =a]		abcdef		/LHS of alias must be lvalue/	bare : after |+sp
+
+[ ]		abcdef		/Null pattern illegal/		only ws in group
+( )		abcdef		/Null pattern illegal/		only ws in capturing group
