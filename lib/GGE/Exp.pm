@@ -298,12 +298,6 @@ class GGE::Exp::Conj is GGE::Exp does MultiChild {
     }
 }
 
-class GGE::Exp::WS is GGE::Exp {
-    method start($string, $pos is rw, %pos) {
-        MATCH
-    }
-}
-
 class GGE::Exp::Group is GGE::Exp {
     method start($, $, %) { DESCEND }
     method failed-group($, %) { FAIL }

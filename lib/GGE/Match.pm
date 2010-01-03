@@ -13,6 +13,7 @@ class Store {
     method array-push($item) { @!array.push($item) }
     method array-list() { @!array.list }
     method array-elems() { @!array.elems }
+    method array-clear() { @!array = () }
 }
 
 class GGE::Match {
@@ -72,6 +73,10 @@ class GGE::Match {
 
     method elems() {
         $!store.array-elems();
+    }
+
+    method clear() {
+        $!store.array-clear();
     }
 
     method make($obj) {

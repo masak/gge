@@ -4,6 +4,20 @@ use GGE::Exp;
 use GGE::OPTable;
 use GGE::TreeSpider;
 
+class GGE::Exp::WS is GGE::Exp {
+    # XXX: This class should really derive from GGE::Exp::Subrule, but
+    #      that class hasn't been implemented yet, so...
+    method start($string, $pos is rw, %pos) {
+        if $string.substr($pos, 1) ~~ /\s/ {
+            ++$pos while $string.substr($pos, 1) ~~ /\s/;
+            MATCH
+        }
+        else {
+            FAIL
+        }
+    }
+}
+
 class GGE::Perl6Regex {
     has $!regex;
 
@@ -24,47 +38,47 @@ class GGE::Perl6Regex {
     method new($pattern) {
         my $optable = GGE::OPTable.new();
         $optable.newtok('term:',     :precedence('='),
-                        :parsed(&GGE::Perl6Regex::parse_term));
+                        :nows, :parsed(&GGE::Perl6Regex::parse_term));
         $optable.newtok('term:#',    :equiv<term:>,
-                        :parsed(&GGE::Perl6Regex::parse_term_ws));
+                        :nows, :parsed(&GGE::Perl6Regex::parse_term_ws));
         $optable.newtok('term:\\',   :equiv<term:>,
-                        :parsed(&GGE::Perl6Regex::parse_term_backslash));
+                        :nows, :parsed(&GGE::Perl6Regex::parse_term_backslash));
         $optable.newtok('term:^',    :equiv<term:>,
-                        :match(GGE::Exp::Anchor));
+                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:^^',   :equiv<term:>,
-                        :match(GGE::Exp::Anchor));
+                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:$',    :equiv<term:>, # XXX not per PGE
-                        :match(GGE::Exp::Anchor));
+                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:$$',   :equiv<term:>,
-                        :match(GGE::Exp::Anchor));
+                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:<<',   :equiv<term:>,
-                        :match(GGE::Exp::Anchor));
+                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:>>',   :equiv<term:>,
-                        :match(GGE::Exp::Anchor));
+                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:.',    :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\d',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\D',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\s',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\S',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\w',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\W',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\N',  :equiv<term:>,
-                        :match(GGE::Exp::CCShortcut));
+                        :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\n',  :equiv<term:>,
-                        :match(GGE::Exp::Newline));
+                        :nows, :match(GGE::Exp::Newline));
         $optable.newtok('term:<[',   :equiv<term:>,
-                        :parsed(&GGE::Perl6Regex::parse_enumcharclass));
+                        :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok('term:<-',   :equiv<term:>,
-                        :parsed(&GGE::Perl6Regex::parse_enumcharclass));
+                        :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok("term:'",    :equiv<term:>,
-                        :parsed(&GGE::Perl6Regex::parse_quoted_literal));
+                        :nows, :parsed(&GGE::Perl6Regex::parse_quoted_literal));
         $optable.newtok('term:::',   :equiv<term:>,
                         :nows, :match(GGE::Exp::Cut));
         $optable.newtok('term::::',  :equiv<term:>,
@@ -72,9 +86,9 @@ class GGE::Perl6Regex {
         $optable.newtok('term:<commit>', :equiv<term:>,
                         :nows, :match(GGE::Exp::Cut));
         $optable.newtok('circumfix:[ ]', :equiv<term:>,
-                        :match(GGE::Exp::Group));
+                        :nows, :match(GGE::Exp::Group));
         $optable.newtok('circumfix:( )', :equiv<term:>,
-                        :match(GGE::Exp::CGroup));
+                        :nows, :match(GGE::Exp::CGroup));
         $optable.newtok('postfix:*', :looser<term:>,
                         :parsed(&GGE::Perl6Regex::parse_quant));
         $optable.newtok('postfix:+', :equiv<postfix:*>,
@@ -426,6 +440,9 @@ class GGE::Perl6Regex {
         if $key eq 'i' {
             $key = 'ignorecase';
         }
+        if $key eq 's' {
+            $key = 'sigspace';
+        }
         # RAKUDO: Looks odd with the '// undef', doesn't it? Well, without
         #         it, things blow up badly if we try to inspect the value
         #         of a hash miss.
@@ -438,11 +455,16 @@ class GGE::Perl6Regex {
 
     multi sub perl6exp(GGE::Exp::Concat $exp is rw, %pad) {
         my $n = $exp.elems;
-        for ^$n -> $i {
-            $exp[$i] = perl6exp($exp[$i], %pad);
+        my @old-children = $exp.llist;
+        $exp.clear;
+        for @old-children -> $old-child {
+            my $new-child = perl6exp($old-child, %pad);
+            if defined $new-child {
+                $exp.push($new-child);
+            }
         }
-        # XXX: Two differences against PGE here: (1) no element removal,
-        #      (2) no subsequent simplification in the case of only 1
+        # XXX: One difference against PGE here:
+        #      no subsequent simplification in the case of only 1
         #      remaining element.
         return $exp;
     }
@@ -495,5 +517,15 @@ class GGE::Perl6Regex {
     multi sub perl6exp(GGE::Exp::Literal $exp is rw, %pad) {
         $exp.hash-access('ignorecase') = %pad<ignorecase>;
         return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::WS $exp is rw, %pad) {
+        if %pad<sigspace> {
+            # XXX: Should do stuff here. See PGE.
+            return $exp;
+        }
+        else {
+            return ();
+        }
     }
 }
