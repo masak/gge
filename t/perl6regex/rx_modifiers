@@ -94,9 +94,12 @@ foo '-'? bar			foo - bar	n	basic non-match
 :s()foo '-'? bar		foo - bar	n	basic ws match
 # todo :pge<feature>
 :s[]foo '-'? bar		foo - bar	y	basic ws match
+# todo :gge<no <?lookahead> yet>
 :s<?wb>foo '-'? bar		foo - bar	y	basic ws match with boundary modifier separation
 :s::foo '-'? bar			foo - bar	y	basic ws match with backtrack no-op modifier separation
+# todo :gge<no captures yet>
 :s::(\w+) ':=' (\S+)		dog := spot	/mob 0: <dog @ 0>/	sigspace and capture together
+# todo :gge<no captures yet>
 :s::(\w+) ':=' (\S+)		dog := spot	/mob 1: <spot @ 7>/	sigspace and capture together
 # todo :pge<feature>
 :perl5 \A.*? bcd\Q$\E..\z	a bcd$ef	y	perl5 syntax (:perl5)
