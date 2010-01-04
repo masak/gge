@@ -4,15 +4,31 @@ use GGE::Exp;
 use GGE::OPTable;
 use GGE::TreeSpider;
 
-class GGE::Exp::WS is GGE::Exp {
+class GGE::Exp::WS is GGE::Exp does Backtracking {
     # XXX: This class should really derive from GGE::Exp::Subrule, but
     #      that class hasn't been implemented yet, so...
-    method start($string, $pos is rw, %pos) {
-        if $pos == 0 || $pos >= $string.chars {
+    method start($string, $pos is rw, %pad) {
+        %pad<from> = $pos;
+        if $pos >= $string.chars {
+            %pad<mpos> = $pos;
             MATCH
         }
-        elsif $string.substr($pos, 1) ~~ /\s/ {
-            ++$pos while $string.substr($pos, 1) ~~ /\s/;
+        elsif $pos == 0 || $string.substr($pos, 1) ~~ /\W/
+              || $string.substr($pos - 1, 1) ~~ /\W/ {
+            while $pos < $string.chars && $string.substr($pos, 1) ~~ /\s/ {
+                ++$pos;
+            }
+            %pad<mpos> = $pos;
+            MATCH
+        }
+        else {
+            FAIL
+        }
+    }
+
+    method backtracked($_: $pos is rw, %pad) {
+        $pos = --%pad<mpos>;
+        if $pos >= %pad<from> {
             MATCH
         }
         else {
