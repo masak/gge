@@ -38,10 +38,18 @@ class GGE::Match {
         return $!to >= $!from;
     }
 
-    method dump_str() {
-        ?self.true()
-            ?? sprintf '<%s @ 0>', $!target.substr($!from, $!to - $!from)
-            !! '';
+    method dump_str($prefix?, $b1 = '[', $b2 = ']') {
+        my $out = sprintf "%s: <%s @ %d> \n",
+                          $prefix,
+                                $!target.substr($!from, $!to - $!from),
+                                     $!from;
+        if self.llist {
+            for self.llist.kv -> $index, $elem {
+                $out ~= [~] $prefix, $b1, $index, $b2;
+                $out ~= ': ', '...', "\n";
+            }
+        }
+        $out
     }
 
     method Str() {

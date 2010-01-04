@@ -54,7 +54,8 @@ for @test-files -> $test-file {
         }
         else {
             $result .= substr(1,-1); # remove /'s
-            ok defined($match.dump_str.index($result)), $full-description;
+            ok defined($match.dump_str('mob', ' ', '').index($result)),
+               $full-description;
         }
     }
 }

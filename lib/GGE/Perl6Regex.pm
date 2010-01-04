@@ -138,6 +138,7 @@ class GGE::Perl6Regex {
     method postcircumfix:<( )>($target, :$debug) {
         if $debug {
             say $!regex.structure;
+            say '';
         }
         GGE::TreeSpider.new(:$!regex, :$target, :pos(*)).crawl(:$debug);
     }
