@@ -4,7 +4,7 @@ use GGE::Exp;
 use GGE::OPTable;
 use GGE::TreeSpider;
 
-class GGE::Exp::WS is GGE::Exp does Backtracking {
+class GGE::Exp::WS is GGE::Exp does GGE::Backtracking {
     # XXX: This class should really derive from GGE::Exp::Subrule, but
     #      that class hasn't been implemented yet, so...
     method start($string, $pos is rw, %pad) {

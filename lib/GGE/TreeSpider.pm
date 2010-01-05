@@ -1,7 +1,9 @@
 use v6;
 use GGE::Exp;
 
-class GGE::Exp::Regex is GGE::Exp does Backtracking {
+class GGE::Exp::Regex   is GGE::Exp
+                      does GGE::Backtracking
+                      does GGE::Container {
     method start($, $, %) { DESCEND }
 }
 
@@ -75,7 +77,8 @@ class GGE::TreeSpider {
                 if $action == DESCEND && %!savepoints.exists($!current.WHICH) {
                     %!savepoints.delete($!current.WHICH);
                 }
-                if $action != DESCEND {
+                if $action != DESCEND
+                   && ($!last == BACKTRACK || !($!current ~~ GGE::Container)) {
                     my $participle
                         = $!last == BACKTRACK ?? 'backtracking' !! 'matching';
                     debug sprintf '%-20s %12s "%-5s": %s',
@@ -89,17 +92,17 @@ class GGE::TreeSpider {
                 if $!last == DESCEND {
                     push @!nodestack, $!current;
                 }
-                if $!current ~~ Backtracking && $action == MATCH {
+                if $!current ~~ GGE::Backtracking && $action == MATCH {
                     my $index = @!nodestack.end - 1;
                     $index--
-                        until @!nodestack[$index] ~~ Backtracking;
+                        until @!nodestack[$index] ~~ GGE::Backtracking;
                     my $ancestor = @!nodestack[$index];
                     (%!savepoints{$ancestor.WHICH} //= []).push(
                         [[@!nodestack.list], [@!padstack.list]]
                     );
                 }
                 if $action == DESCEND {
-                    $!current = $!current[ $!current ~~ MultiChild
+                    $!current = $!current[ $!current ~~ GGE::MultiChild
                                            ?? %pad<child> !! 0 ];
                 }
                 else {

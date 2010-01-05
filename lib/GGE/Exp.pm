@@ -1,7 +1,7 @@
 use v6;
 use GGE::Match;
 
-role ShowContents {
+role GGE::ShowContents {
     method contents() {
         self.ast;
     }
@@ -18,8 +18,11 @@ enum Action <
     BACKTRACK
 >;
 
-role Backtracking {}
+role GGE::Backtracking {}  # a GGE::Exp involved in backtracking
+role GGE::Container {}     # a GGE::Exp containing other GGE::Exp nodes
+role GGE::MultiChild does GGE::Container {}  # ...containing several...
 
+# RAKUDO: Blablabla, GGE::Exp::Cut, blablabla, see above. [perl #71460]
 enum Cut <
     CUT_GROUP
     CUT_RULE
@@ -53,7 +56,7 @@ class GGE::Exp is GGE::Match {
     }
 }
 
-class GGE::Exp::Literal is GGE::Exp does ShowContents {
+class GGE::Exp::Literal is GGE::Exp does GGE::ShowContents {
     method start($string, $pos is rw, %pad) {
         my $value = ~self.ast;
         if $pos < $string.chars
@@ -75,7 +78,7 @@ enum GGE_BACKTRACK <
     NONE
 >;
 
-class GGE::Exp::Quant is GGE::Exp does Backtracking {
+class GGE::Exp::Quant is GGE::Exp does GGE::Backtracking does GGE::Container {
     method contents() {
         my ($min, $max, $bt) = map { self.hash-access($_) },
                                    <min max backtrack>;
@@ -139,7 +142,7 @@ class GGE::Exp::Quant is GGE::Exp does Backtracking {
     }
 }
 
-class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
+class GGE::Exp::CCShortcut is GGE::Exp does GGE::ShowContents {
     method start($string, $pos is rw, %pad) {
         my $cc-char = self.ast.substr(1);
         if $pos >= $string.chars {
@@ -162,7 +165,7 @@ class GGE::Exp::CCShortcut is GGE::Exp does ShowContents {
     }
 }
 
-class GGE::Exp::Newline is GGE::Exp does ShowContents {
+class GGE::Exp::Newline is GGE::Exp does GGE::ShowContents {
     method start($string, $pos is rw, %pad) {
         if $pos >= $string.chars {
             FAIL
@@ -181,7 +184,7 @@ class GGE::Exp::Newline is GGE::Exp does ShowContents {
     }
 }
 
-class GGE::Exp::Anchor is GGE::Exp does ShowContents {
+class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
     method start($string, $pos is rw, %pad) {
         my $matches = self.ast eq '^' && $pos == 0
             || self.ast eq '$' && $pos == $string.chars
@@ -199,9 +202,7 @@ class GGE::Exp::Anchor is GGE::Exp does ShowContents {
     }
 }
 
-role MultiChild {}
-
-class GGE::Exp::Concat is GGE::Exp does MultiChild {
+class GGE::Exp::Concat is GGE::Exp does GGE::MultiChild {
     method start($, $, %pad is rw) {
         %pad<child> = 0;
         DESCEND
@@ -217,7 +218,10 @@ class GGE::Exp::Concat is GGE::Exp does MultiChild {
     }
 }
 
-class GGE::Exp::Modifier is GGE::Exp does ShowContents {
+class GGE::Exp::Modifier   is GGE::Exp
+                         does GGE::ShowContents
+                         does GGE::Container
+{
     method contents() {
         self.hash-access('key');
     }
@@ -225,7 +229,7 @@ class GGE::Exp::Modifier is GGE::Exp does ShowContents {
     method start($, $, %) { DESCEND }
 }
 
-class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
+class GGE::Exp::EnumCharList is GGE::Exp does GGE::ShowContents {
     method contents() {
         my $zw   = self.hash-access('iszerowidth') ?? 'zw '  !! '';
         my $neg  = self.hash-access('isnegated')   ?? 'neg ' !! '';
@@ -250,7 +254,7 @@ class GGE::Exp::EnumCharList is GGE::Exp does ShowContents {
     }
 }
 
-class GGE::Exp::Alt is GGE::Exp does MultiChild does Backtracking {
+class GGE::Exp::Alt is GGE::Exp does GGE::MultiChild does GGE::Backtracking {
     method start($, $pos, %pad) {
         %pad<child> = 0;
         %pad<orig-pos> = $pos;
@@ -273,7 +277,7 @@ class GGE::Exp::Alt is GGE::Exp does MultiChild does Backtracking {
     }
 }
 
-class GGE::Exp::Conj is GGE::Exp does MultiChild {
+class GGE::Exp::Conj is GGE::Exp does GGE::MultiChild {
     method start($, $pos, %pad) {
         %pad<child> = 0;
         %pad<orig-pos> = $pos;
@@ -298,17 +302,17 @@ class GGE::Exp::Conj is GGE::Exp does MultiChild {
     }
 }
 
-class GGE::Exp::Group is GGE::Exp {
+class GGE::Exp::Group is GGE::Exp does GGE::Container {
     method start($, $, %) { DESCEND }
     method failed-group($, %) { FAIL }
 }
 
-class GGE::Exp::CGroup is GGE::Exp {
+class GGE::Exp::CGroup is GGE::Exp does GGE::Container {
     method start($, $, %) { DESCEND }
     method failed-group($, %) { FAIL }
 }
 
-class GGE::Exp::Cut is GGE::Exp does Backtracking {
+class GGE::Exp::Cut is GGE::Exp does GGE::Backtracking {
     method backtracked($pos, %pad) {
         if self.hash-access('cutmark') == CUT_GROUP {
             FAIL_GROUP
