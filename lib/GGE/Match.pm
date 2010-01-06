@@ -45,8 +45,8 @@ class GGE::Match {
                                      $!from;
         if self.llist {
             for self.llist.kv -> $index, $elem {
-                $out ~= [~] $prefix, $b1, $index, $b2;
-                $out ~= ': ', '...', "\n";
+                my $name = [~] $prefix, $b1, $index, $b2;
+                $out ~= $elem.dump_str($name, $b1, $b2);
             }
         }
         $out

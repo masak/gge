@@ -8,18 +8,20 @@ class GGE::Exp::Regex   is GGE::Exp
 }
 
 class GGE::TreeSpider {
-    has GGE::Exp $!top;
-    has Str      $!target;
-    has Int      $!from;
-    has Int      $!pos;
-    has Bool     $!iterate-positions;
+    has GGE::Exp   $!top;
+    has Str        $!target;
+    has Int        $!from;
+    has Int        $!pos;
+    has Bool       $!iterate-positions;
+    has GGE::Match $!match;
+    has GGE::Match $!cap;
 
-    has GGE::Exp $!current;
-    has Int      $!pos;
-    has Action   $!last;
-    has GGE::Exp @!nodestack;
-    has          @!padstack;
-    has          %!savepoints;
+    has GGE::Exp   $!current;
+    has Int        $!pos;
+    has Action     $!last;
+    has GGE::Exp   @!nodestack;
+    has            @!padstack;
+    has            %!savepoints;
 
     submethod BUILD(GGE::Exp :$regex!, Str :$!target!, :$pos!) {
         $!top = GGE::Exp::Regex.new();
@@ -36,10 +38,12 @@ class GGE::TreeSpider {
 
     method crawl(:$debug) {
         my &debug = $debug ?? -> *@_ { $*ERR.say(|@_) } !! -> *@_ { ; };
+        $!match = GGE::Match.new(:target($!target));
         my @start-positions = $!iterate-positions ?? ^$!target.chars !! $!from;
         for @start-positions -> $start-position {
             debug 'Starting at position ', $start-position;
-            $!pos = $start-position;
+            $!match.from = $!pos = $start-position;
+            $!match.clear;
             $!current = $!top;
             $!last = DESCEND;
             loop {
@@ -101,6 +105,16 @@ class GGE::TreeSpider {
                         [[@!nodestack.list], [@!padstack.list]]
                     );
                 }
+                if $!current ~~ GGE::Exp::CGroup {
+                    given $action {
+                        when DESCEND {
+                            $!cap = GGE::Match.new(:target($!target),
+                                                   :from($!pos));
+                            $!match.push($!cap);
+                        }
+                        when MATCH   { $!cap.to = $!pos }
+                    }
+                }
                 if $action == DESCEND {
                     $!current = $!current[ $!current ~~ GGE::MultiChild
                                            ?? %pad<child> !! 0 ];
@@ -117,12 +131,14 @@ class GGE::TreeSpider {
                 last;
             }
             if $!last == MATCH {
-                return GGE::Match.new(:target($!target),
-                                      :from($start-position),
-                                      :to($!pos));
+                $!match.to = $!pos;
+                return $!match;
             }
         }
 
-        GGE::Match.new(:target($!target), :from(0), :to(-2));
+        # The match failed
+        $!match.from = 0;
+        $!match.to   = -2;
+        $!match;
     }
 }
