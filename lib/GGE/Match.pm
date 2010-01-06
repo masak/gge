@@ -46,10 +46,24 @@ class GGE::Match {
         if self.llist {
             for self.llist.kv -> $index, $elem {
                 my $name = [~] $prefix, $b1, $index, $b2;
-                $out ~= $elem.dump_str($name, $b1, $b2);
+                given $elem {
+                    when !.defined { next }
+                    when GGE::Match {
+                        $out ~= $elem.dump_str($name, $b1, $b2);
+                    }
+                    when List {
+                        for $elem.list.kv -> $i2, $e2 {
+                            my $n2 = [~] $name, $b1, $i2, $b2;
+                            $out ~= $e2.dump_str($n2, $b1, $b2);
+                        }
+                    }
+                    when * {
+                        say "Oops, don't know what to do with {$elem.WHAT}";
+                    }
+                }
             }
         }
-        $out
+        return $out;
     }
 
     method Str() {

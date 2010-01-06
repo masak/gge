@@ -14,7 +14,7 @@ class GGE::TreeSpider {
     has Int        $!pos;
     has Bool       $!iterate-positions;
     has GGE::Match $!match;
-    has GGE::Match @!caps;
+    has            @!caps;
 
     has GGE::Exp   $!current;
     has Int        $!pos;
@@ -70,6 +70,11 @@ class GGE::TreeSpider {
                 if $!last == BACKTRACK {
                     $!pos = %pad<pos>;
                 }
+                if $!current ~~ GGE::Exp::Quant
+                   && $!current[0] ~~ GGE::Exp::CGroup
+                   && $!last == DESCEND {
+                    @!caps.push([]);
+                }
                 my $action = do given $!last {
                     when DESCEND    { $!current.start($!target, $!pos, %pad) }
                     when MATCH      { $!current.succeeded($!pos, %pad)       }
@@ -115,6 +120,18 @@ class GGE::TreeSpider {
                         }
                         when MATCH {
                             @!caps[*-1].to = $!pos;
+                            my $cap = pop @!caps;
+                            (@!caps ?? @!caps[*-1] !! $!match).push($cap);
+                        }
+                        when FAIL | FAIL_GROUP | FAIL_RULE {
+                            pop @!caps;
+                        }
+                    }
+                }
+                elsif $!current ~~ GGE::Exp::Quant
+                       && $!current[0] ~~ GGE::Exp::CGroup {
+                    given $action {
+                        when MATCH {
                             my $cap = pop @!caps;
                             (@!caps ?? @!caps[*-1] !! $!match).push($cap);
                         }
