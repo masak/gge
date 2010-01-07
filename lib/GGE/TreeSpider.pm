@@ -70,6 +70,10 @@ class GGE::TreeSpider {
                 if $!last == BACKTRACK {
                     $!pos = %pad<pos>;
                 }
+                if $!current ~~ GGE::Exp::CGroup
+                   && $!last == BACKTRACK {
+                    (@!caps ?? @!caps[*-1] !! $!match).pop();
+                }
                 if $!current ~~ GGE::Exp::Quant
                    && $!current[0] ~~ GGE::Exp::CGroup
                    && $!last == DESCEND {

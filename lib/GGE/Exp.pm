@@ -307,9 +307,10 @@ class GGE::Exp::Group is GGE::Exp does GGE::Container {
     method failed-group($, %) { FAIL }
 }
 
-class GGE::Exp::CGroup is GGE::Exp does GGE::Container {
+class GGE::Exp::CGroup is GGE::Exp does GGE::Container does GGE::Backtracking {
     method start($, $, %) { DESCEND }
     method failed-group($, %) { FAIL }
+    method backtracked($, %) { FAIL }
 }
 
 class GGE::Exp::Cut is GGE::Exp does GGE::Backtracking {

@@ -11,6 +11,7 @@ class Store {
     method array-access($index) { @!array[$index] }
     method array-setelem($index, $value) { @!array[$index] = $value }
     method array-push($item) { @!array.push($item) }
+    method array-pop() { @!array.pop() }
     method array-list() { @!array.list }
     method array-elems() { @!array.elems }
     method array-clear() { @!array = () }
@@ -87,6 +88,10 @@ class GGE::Match {
 
     method push($submatch) {
         $!store.array-push($submatch);
+    }
+
+    method pop() {
+        $!store.array-pop();
     }
 
     method llist() {
