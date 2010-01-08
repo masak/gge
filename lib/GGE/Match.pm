@@ -1,11 +1,12 @@
 use v6;
 
-# RAKUDO: See the postcircumfix:<{ }> below.
+# This is a workaround. See the postcircumfix:<{ }> comments below.
 class Store {
     has %!hash is rw;
     has @!array is rw;
 
     method hash-access($key) { %!hash{$key} }
+    method hash-exists($key) { %!hash.exists($key) }
     method hash-delete($key) { %!hash.delete($key) }
 
     method array-access($index) { @!array[$index] }
@@ -39,7 +40,7 @@ class GGE::Match {
         return $!to >= $!from;
     }
 
-    method dump_str($prefix?, $b1 = '[', $b2 = ']') {
+    method dump_str($prefix = '', $b1 = '[', $b2 = ']') {
         my $out = sprintf "%s: <%s @ %d> \n",
                           $prefix,
                                 $!target.substr($!from, $!to - $!from),
@@ -83,6 +84,8 @@ class GGE::Match {
     method postcircumfix:<[ ]>($index) { $!store.array-access($index) }
 
     method set($index, $value) { $!store.array-setelem($index, $value) }
+
+    method exists($key) { $!store.hash-exists($key) }
 
     method delete($key) { $!store.hash-delete($key) }
 

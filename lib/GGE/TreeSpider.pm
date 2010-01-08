@@ -14,12 +14,14 @@ class GGE::TreeSpider {
     has Int        $!pos;
     has Bool       $!iterate-positions;
     has GGE::Match $!match;
-    has            @!caps;
+    has            @!capstack;
 
     has GGE::Exp   $!current;
     has Int        $!pos;
     has Action     $!last;
-    has GGE::Exp   @!nodestack;
+    # RAKUDO: Originally had @!nodestack typed as 'GGE::Exp', but that
+    #         triggered a bug.
+    has            @!nodestack;
     has            @!padstack;
     has            %!savepoints;
 
@@ -44,7 +46,7 @@ class GGE::TreeSpider {
             debug 'Starting at position ', $start-position;
             $!match.from = $!pos = $start-position;
             $!match.clear;
-            @!caps = ();
+            @!capstack = $!match;
             $!current = $!top;
             $!last = DESCEND;
             loop {
@@ -72,12 +74,13 @@ class GGE::TreeSpider {
                 }
                 if $!current ~~ GGE::Exp::CGroup
                    && $!last == BACKTRACK {
-                    (@!caps ?? @!caps[*-1] !! $!match).pop();
+                    my $cname = $!current.hash-access('cname');
+                    @!capstack[*-1].[$cname] = undef;
                 }
                 if $!current ~~ GGE::Exp::Quant
                    && $!current[0] ~~ GGE::Exp::CGroup
                    && $!last == DESCEND {
-                    @!caps.push([]);
+                    @!capstack.push([]);
                 }
                 my $action = do given $!last {
                     when DESCEND    { $!current.start($!target, $!pos, %pad) }
@@ -118,28 +121,29 @@ class GGE::TreeSpider {
                 if $!current ~~ GGE::Exp::CGroup {
                     given $action {
                         when DESCEND {
-                            my $cap = GGE::Match.new(:target($!target),
-                                                     :from($!pos));
-                            @!caps.push($cap);
+                            my $cap = GGE::Match.new( :target($!target),
+                                                      :from($!pos) );
+                            @!capstack.push($cap);
                         }
                         when MATCH {
-                            @!caps[*-1].to = $!pos;
-                            my $cap = pop @!caps;
-                            (@!caps ?? @!caps[*-1] !! $!match).push($cap);
+                            my $cap = @!capstack.pop;
+                            $cap.to = $!pos;
+                            my $cname = $!current.hash-access('cname');
+                            @!capstack[*-1].[$cname] = $cap;
                         }
                         when FAIL | FAIL_GROUP | FAIL_RULE {
-                            pop @!caps;
+                            if $!last != BACKTRACK {
+                                @!capstack.pop;
+                            }
                         }
                     }
                 }
                 elsif $!current ~~ GGE::Exp::Quant
-                       && $!current[0] ~~ GGE::Exp::CGroup {
-                    given $action {
-                        when MATCH {
-                            my $cap = pop @!caps;
-                            (@!caps ?? @!caps[*-1] !! $!match).push($cap);
-                        }
-                    }
+                      && $!current[0] ~~ GGE::Exp::CGroup
+                      && $action == MATCH {
+                    my $array = @!capstack.pop;
+                    my $cname = $!current[0].hash-access('cname');
+                    @!capstack[*-1].[$cname] = $array;
                 }
                 if $action == DESCEND {
                     $!current = $!current[ $!current ~~ GGE::MultiChild

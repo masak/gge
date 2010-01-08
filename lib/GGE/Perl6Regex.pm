@@ -502,7 +502,9 @@ class GGE::Perl6Regex {
         if $exp[1] ~~ GGE::Exp::WS {
             die 'Perl6Regex rule error: nothing not allowed in alternations';
         }
+        my $subpats-before = %pad<subpats>;
         $exp[0] = perl6exp($exp[0], %pad);
+        %pad<subpats> = $subpats-before;
         $exp[1] = perl6exp($exp[1], %pad);
         return $exp;
     }
@@ -522,7 +524,13 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::CGroup $exp is rw, %pad) {
+        unless $exp.exists('cname') {
+            my $subpats = %pad<subpats> // 0;
+            $exp.hash-access('cname') = $subpats;
+        }
+        %pad<subpats> = 0;
         $exp[0] = perl6exp($exp[0], %pad);
+        %pad<subpats> = $exp.hash-access('cname') + 1;
         return $exp;
     }
 
