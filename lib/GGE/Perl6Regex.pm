@@ -534,10 +534,13 @@ class GGE::Perl6Regex {
             my $subpats = %pad<subpats> // 0;
             $exp.hash-access('cname') = $subpats;
         }
-        $exp.hash-access('isarray') = %pad<isarray> // False;
+        my $isarray = %pad<isarray> // False;
+        $exp.hash-access('isarray') = $isarray;
+        %pad<isarray> = False;
         %pad<subpats> = 0;
         $exp[0] = perl6exp($exp[0], %pad);
         %pad<subpats> = $exp.hash-access('cname') + 1;
+        %pad<isarray> = $isarray;
         return $exp;
     }
 
