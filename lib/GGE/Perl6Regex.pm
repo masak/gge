@@ -490,7 +490,10 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::Quant $exp is rw, %pad) {
+        my $isarray = %pad<isarray> // undef;
+        %pad<isarray> = True;
         $exp[0] = perl6exp($exp[0], %pad);
+        %pad<isarray> = $isarray;
         $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE !! GREEDY;
         return $exp;
     }
@@ -531,6 +534,7 @@ class GGE::Perl6Regex {
             my $subpats = %pad<subpats> // 0;
             $exp.hash-access('cname') = $subpats;
         }
+        $exp.hash-access('isarray') = %pad<isarray> // False;
         %pad<subpats> = 0;
         $exp[0] = perl6exp($exp[0], %pad);
         %pad<subpats> = $exp.hash-access('cname') + 1;

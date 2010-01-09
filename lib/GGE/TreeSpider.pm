@@ -131,9 +131,13 @@ class GGE::TreeSpider {
                             if (my $topcap = @!capstack[*-1]) ~~ Array {
                                 $topcap.push($cap);
                             }
-                            else { # it's a GGE::Match
+                            elsif $!current.hash-access('isarray') {
                                 my $cname = $!current.hash-access('cname');
-                                @!capstack[*-1].[$cname] = $cap;
+                                ($topcap[$cname] //= []).push($cap);
+                            }
+                            else {
+                                my $cname = $!current.hash-access('cname');
+                                $topcap[$cname] = $cap;
                             }
                         }
                         when FAIL | FAIL_GROUP | FAIL_RULE {
