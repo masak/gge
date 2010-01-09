@@ -128,8 +128,13 @@ class GGE::TreeSpider {
                         when MATCH {
                             my $cap = @!capstack.pop;
                             $cap.to = $!pos;
-                            my $cname = $!current.hash-access('cname');
-                            @!capstack[*-1].[$cname] = $cap;
+                            if (my $topcap = @!capstack[*-1]) ~~ Array {
+                                $topcap.push($cap);
+                            }
+                            else { # it's a GGE::Match
+                                my $cname = $!current.hash-access('cname');
+                                @!capstack[*-1].[$cname] = $cap;
+                            }
                         }
                         when FAIL | FAIL_GROUP | FAIL_RULE {
                             if $!last != BACKTRACK {
