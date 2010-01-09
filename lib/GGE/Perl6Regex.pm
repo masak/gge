@@ -504,8 +504,11 @@ class GGE::Perl6Regex {
         }
         my $subpats-before = %pad<subpats>;
         $exp[0] = perl6exp($exp[0], %pad);
+        my $subpats-after0 = %pad<subpats>;
         %pad<subpats> = $subpats-before;
         $exp[1] = perl6exp($exp[1], %pad);
+        my $subpats-after1 = %pad<subpats>;
+        %pad<subpats> = [max] $subpats-after0, $subpats-after1;
         return $exp;
     }
 
