@@ -323,3 +323,9 @@ class GGE::Exp::Cut is GGE::Exp does GGE::Backtracking {
         }
     }
 }
+
+class GGE::Exp::Scalar is GGE::Exp does GGE::ShowContents {
+}
+
+class GGE::Exp::Alias is GGE::Exp {
+}

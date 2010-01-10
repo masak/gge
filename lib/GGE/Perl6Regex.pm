@@ -66,8 +66,6 @@ class GGE::Perl6Regex {
                         :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:^^',   :equiv<term:>,
                         :nows, :match(GGE::Exp::Anchor));
-        $optable.newtok('term:$',    :equiv<term:>, # XXX not per PGE
-                        :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:$$',   :equiv<term:>,
                         :nows, :match(GGE::Exp::Anchor));
         $optable.newtok('term:<<',   :equiv<term:>,
@@ -92,6 +90,8 @@ class GGE::Perl6Regex {
                         :nows, :match(GGE::Exp::CCShortcut));
         $optable.newtok('term:\\n',  :equiv<term:>,
                         :nows, :match(GGE::Exp::Newline));
+        $optable.newtok('term:$',    :equiv<term:>,
+                        :nows, :parsed(&GGE::Perl6Regex::parse_dollar));
         $optable.newtok('term:<[',   :equiv<term:>,
                         :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
         $optable.newtok('term:<-',   :equiv<term:>,
@@ -126,6 +126,8 @@ class GGE::Perl6Regex {
                         :nows, :match(GGE::Exp::Alt));
         $optable.newtok('prefix:|',  :equiv<infix:|>,
                         :nows, :match(GGE::Exp::Alt));
+        $optable.newtok('infix:=',   :tighter<infix:>, :assoc<right>,
+                        :match(GGE::Exp::Alias));
         $optable.newtok('prefix::',  :looser<infix:|>,
                         :parsed(&GGE::Perl6Regex::parse_modifier));
         my $match = $optable.parse($pattern);
@@ -415,6 +417,21 @@ class GGE::Perl6Regex {
         $m;
     }
 
+    sub parse_dollar($mob) {
+        my $pos = $mob.to;
+        my $target = $mob.target;
+        ++$pos while $target.substr($pos, 1) ~~ /\d/;
+        if $pos > $mob.to {
+            my $m = GGE::Exp::Scalar.new($mob);
+            $m.hash-access('cname') = $target.substr($mob.to, $pos - $mob.to);
+            $m.to = $pos;
+            return $m;
+        }
+        my $m = GGE::Exp::Anchor.new($mob);
+        $m.to = $pos;
+        return $m;
+    }
+
     sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
         my $target = $m.target;
@@ -559,5 +576,19 @@ class GGE::Perl6Regex {
         else {
             return ();
         }
+    }
+
+    multi sub perl6exp(GGE::Exp::Alias $exp is rw, %pad) {
+        unless $exp[0] ~~ GGE::Exp::Scalar {
+            die 'perl6regex parse error: LHS of alias must be lvalue';
+        }
+        my $cname = $exp[0].hash-access('cname');
+        my $exp1 = $exp[1];
+        if $exp1 ~~ GGE::Exp::CGroup {
+            $exp1.hash-access('cname') = $cname;
+            $exp1 = perl6exp($exp1, %pad);
+            return $exp1;
+        }
+        die "We don't handle the other cases yet";
     }
 }
