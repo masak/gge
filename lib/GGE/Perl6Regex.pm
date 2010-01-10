@@ -544,17 +544,27 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::CGroup $exp is rw, %pad) {
+        unless $exp.exists('isscope') {
+            $exp.hash-access('isscope') = True;
+        }
         unless $exp.exists('cname') {
             my $subpats = %pad<subpats> // 0;
             $exp.hash-access('cname') = $subpats;
         }
-        my $isarray = %pad<isarray> // False;
-        $exp.hash-access('isarray') = $isarray;
-        %pad<isarray> = False;
-        %pad<subpats> = 0;
-        $exp[0] = perl6exp($exp[0], %pad);
         %pad<subpats> = $exp.hash-access('cname') + 1;
-        %pad<isarray> = $isarray;
+        my $isarray = %pad<isarray> // False;
+        if $exp.hash-access('isscope') {
+            $exp.hash-access('isarray') = $isarray;
+            %pad<isarray> = False;
+            my $subpats = %pad<subpats>;
+            %pad<subpats> = 0;
+            $exp[0] = perl6exp($exp[0], %pad);
+            %pad<subpats> = $subpats;
+            %pad<isarray> = $isarray;
+        }
+        else {
+            $exp[0] = perl6exp($exp[0], %pad);
+        }
         return $exp;
     }
 
@@ -599,6 +609,7 @@ class GGE::Perl6Regex {
         $cexp.from = $exp.from;
         $cexp.to   = $exp.to;
         $cexp[0]   = $exp1;
+        $cexp.hash-access('isscope') = False;
         $cexp.hash-access('cname') = $cname;
         $cexp = perl6exp($cexp, %pad);
         return $cexp;

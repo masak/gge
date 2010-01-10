@@ -120,12 +120,22 @@ class GGE::TreeSpider {
                         when DESCEND {
                             my $cap = GGE::Match.new( :target($!target),
                                                       :from($!pos) );
+                            $cap.hash-access('isscope')
+                                = $!current.hash-access('isscope');
                             @!capstack.push($cap);
                         }
                         when MATCH {
                             my $cap = @!capstack.pop;
                             $cap.to = $!pos;
-                            if (my $topcap = @!capstack[*-1]) ~~ Array {
+                            # Find a capture that is a scope.
+                            my $ix = @!capstack.end;
+                            --$ix
+                                while $ix > 0
+                                      && @!capstack[$ix] !~~ Array
+                                      && ! @!capstack[$ix]\
+                                             .hash-access('isscope');
+                            my $topcap = @!capstack[$ix];
+                            if $topcap ~~ Array {
                                 $topcap.push($cap);
                             }
                             elsif $!current.hash-access('isarray') {
