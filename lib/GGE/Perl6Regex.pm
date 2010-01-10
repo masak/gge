@@ -589,6 +589,15 @@ class GGE::Perl6Regex {
             $exp1 = perl6exp($exp1, %pad);
             return $exp1;
         }
-        die "We don't handle the other cases yet";
+        if $exp1 ~~ GGE::Exp::Quant {
+            die "We don't handle that case yet";
+        }
+        my $cexp = GGE::Exp::CGroup.new($exp);
+        $cexp.from = $exp.from;
+        $cexp.to   = $exp.to;
+        $cexp[0]   = $exp1;
+        $cexp.hash-access('cname') = $cname;
+        $cexp = perl6exp($cexp, %pad);
+        return $cexp;
     }
 }
