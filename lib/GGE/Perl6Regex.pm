@@ -516,12 +516,12 @@ class GGE::Perl6Regex {
         if $exp[1] ~~ GGE::Exp::WS {
             die 'Perl6Regex rule error: nothing not allowed in alternations';
         }
-        my $subpats-before = %pad<subpats>;
+        my $subpats-before = %pad<subpats> // 0;
         $exp[0] = perl6exp($exp[0], %pad);
-        my $subpats-after0 = %pad<subpats>;
+        my $subpats-after0 = %pad<subpats> // 0;
         %pad<subpats> = $subpats-before;
         $exp[1] = perl6exp($exp[1], %pad);
-        my $subpats-after1 = %pad<subpats>;
+        my $subpats-after1 = %pad<subpats> // 0;
         %pad<subpats> = [max] $subpats-after0, $subpats-after1;
         return $exp;
     }
