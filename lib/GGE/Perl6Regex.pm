@@ -166,12 +166,6 @@ class GGE::Perl6Regex {
     sub parse_term_ws($mob) {
         my $m = GGE::Exp::WS.new($mob);
         $m.to = $mob.to;
-        # XXX: This is a fix for my lack of understanding of the relation
-        #      between $m.from and $m.pos. There is no corresponding
-        #      adjustment needed in PGE.
-        if $m.to > 0 && $m.target.substr($m.to - 1, 1) eq '#' {
-            --$m.to;
-        }
         $m.to++ while $m.target.substr($m.to, 1) ~~ /\s/;
         if $m.target.substr($m.to, 1) eq '#' {
             my $delim = "\n";
@@ -240,7 +234,7 @@ class GGE::Perl6Regex {
                                         !! GGE::Exp::Literal.new($mob);
             $m.hash-access('isnegated') = $isnegated;
             $m.make($escapes.ast);
-            $m.to = $escapes.to;
+            $m.to = $escapes.to + 1;
             return $m;
         }
         elsif %esclist.exists($backchar) {
@@ -248,7 +242,7 @@ class GGE::Perl6Regex {
             my GGE::Exp $m = GGE::Exp::EnumCharList.new($mob);
             $m.hash-access('isnegated') = $isnegated;
             $m.make($charlist);
-            $m.to = $mob.to;
+            $m.to = $mob.to + 1;
             return $m;
         }
         elsif $backchar ~~ /\w/ {
@@ -323,7 +317,7 @@ class GGE::Perl6Regex {
             $subtraction[1] = $everything;
             $term = $subtraction;
         }
-        $term.to = $pos;
+        $term.to = $pos + 2;
         return $term;
     }
 
@@ -344,7 +338,7 @@ class GGE::Perl6Regex {
                 if $pos >= $target.chars;
         }
         $m.make($lit);
-        $m.to = $pos;
+        $m.to = $pos + 1;
         $m;
     }
 

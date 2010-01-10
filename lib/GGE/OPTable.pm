@@ -222,7 +222,9 @@ class GGE::OPTable {
                     }
                     if $token<syncat> == GGE_OPTABLE_TERM() {
                         push @termstack, $oper;
-                        $pos += $key.chars;
+                        unless $token.exists('parsed') {
+                            $pos += $key.chars;
+                        }
                         $expect = $token<expect> +> 8;
                         $found_oper = True;
                         last;
