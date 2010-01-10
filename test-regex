@@ -10,7 +10,7 @@ my GGE::Match $match
     = GGE::Perl6Regex.new($pattern).(backslash_escape($target), :debug);
 
 say '';
-say $match.dump_str('mob', ' ', '') || 'No match';
+say $match ?? $match.dump_str('mob', ' ', '') !! "No match\n";
 
 sub backslash_escape($string) {
     return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
