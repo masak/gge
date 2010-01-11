@@ -91,7 +91,7 @@ class GGE::TreeSpider {
                     when FAIL_RULE  { $!current.failed-rule($!pos, %pad)     }
                     when *          { die 'Unknown action ', $!last.name     }
                 };
-                if $action == DESCEND && %!savepoints.exists($!current.WHICH) {
+                if $action == MATCH && %!savepoints.exists($!current.WHICH) {
                     %!savepoints.delete($!current.WHICH);
                 }
                 if $action != DESCEND
