@@ -173,7 +173,7 @@ class GGE::Perl6Regex {
             my $delim = "\n";
             $m.to = defined $m.target.index($delim, $m.to)
                     ?? $m.target.index($delim, $m.to) + 1
-                    !!  $m.target.chars;
+                    !! $m.target.chars;
         }
         $m;
     }
@@ -512,6 +512,9 @@ class GGE::Perl6Regex {
     multi sub perl6exp(GGE::Exp::Alt $exp is rw, %pad) {
         if !defined $exp[1] {
             return perl6exp($exp[0], %pad);
+        }
+        if $exp[0] ~~ GGE::Exp::WS {
+            return perl6exp($exp[1], %pad);
         }
         if $exp[1] ~~ GGE::Exp::WS {
             die 'Perl6Regex rule error: nothing not allowed in alternations';
