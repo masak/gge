@@ -68,7 +68,7 @@ sub match_perl6regex($pattern, $target) {
 sub backslash_escape($string) {
     return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
                          ["\n", "\r", "\e", "\t", "\f"])\
-                  .subst(/'\\x' (<[0..9a..f]>**{2})/, { chr(:16($0)) }, :g);
+                  .subst(/'\\x' (<[0..9a..f]>**{2..4})/, { chr(:16($0)) }, :g);
 }
 
 done_testing;
