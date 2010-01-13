@@ -262,7 +262,7 @@ class GGE::Exp::Alt is GGE::Exp does GGE::MultiChild does GGE::Backtracking {
     }
 
     method failed($pos is rw, %pad is rw) {
-        self.backtracked($pos, %pad);
+        FAIL
     }
 
     method backtracked($pos is rw, %pad is rw) {

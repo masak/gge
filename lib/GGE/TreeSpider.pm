@@ -1,12 +1,6 @@
 use v6;
 use GGE::Exp;
 
-class GGE::Exp::Regex   is GGE::Exp
-                      does GGE::Backtracking
-                      does GGE::Container {
-    method start($, $, %) { DESCEND }
-}
-
 class GGE::TreeSpider {
     has GGE::Exp   $!top;
     has Str        $!target;
@@ -23,11 +17,10 @@ class GGE::TreeSpider {
     #         triggered a bug.
     has            @!nodestack;
     has            @!padstack;
-    has            %!savepoints;
+    has            @!savepoints;
 
     submethod BUILD(GGE::Exp :$regex!, Str :$!target!, :$pos!) {
-        $!top = GGE::Exp::Regex.new();
-        $!top[0] = $regex;
+        $!top = $regex;
         # RAKUDO: Smartmatch on type yields an Int, must convert to Bool
         #         manually. [perl #71462]
         if $!iterate-positions = ?($pos ~~ Whatever) {
@@ -44,6 +37,7 @@ class GGE::TreeSpider {
         my @start-positions = $!iterate-positions ?? ^$!target.chars !! $!from;
         for @start-positions -> $start-position {
             debug 'Starting at position ', $start-position;
+            @!savepoints = ();
             $!match.from = $!pos = $start-position;
             $!match.clear;
             @!capstack = $!match;
@@ -58,17 +52,6 @@ class GGE::TreeSpider {
                 my $fragment = ($!target ~ '«END»').substr($!pos, 5)\
                                .trans( [ "\n", "\t" ] => [ "\\n", "\\t" ] )\
                                .substr(0, 5);
-                if $!last == FAIL {
-                    if %!savepoints.exists($!current.WHICH)
-                       && +%!savepoints{$!current.WHICH} {
-                        my @sp = %!savepoints{$!current.WHICH}.pop.list;
-                        @!nodestack = @sp[0].list;
-                        @!padstack  = @sp[1].list;
-                        $!current = @!nodestack[*-1];
-                        $!last = BACKTRACK;
-                        next;
-                    }
-                }
                 if $!last == BACKTRACK {
                     $!pos = %pad<pos>;
                 }
@@ -82,6 +65,15 @@ class GGE::TreeSpider {
                    && $!last == DESCEND {
                     @!capstack.push([]);
                 }
+                if $!current ~~ GGE::Exp::Quant
+                   && $!current.hash-access('backtrack') == NONE
+                   && $!last == DESCEND {
+                    %pad<ratchet-savepoints> = +@!savepoints;
+                }
+                elsif $!current ~~ GGE::Exp::Group
+                      && $!last == DESCEND {
+                    %pad<group-savepoints> = +@!savepoints;
+                }
                 my $action = do given $!last {
                     when DESCEND    { $!current.start($!target, $!pos, %pad) }
                     when MATCH      { $!current.succeeded($!pos, %pad)       }
@@ -91,9 +83,6 @@ class GGE::TreeSpider {
                     when FAIL_RULE  { $!current.failed-rule($!pos, %pad)     }
                     when *          { die 'Unknown action ', $!last.name     }
                 };
-                if $action == MATCH && %!savepoints.exists($!current.WHICH) {
-                    %!savepoints.delete($!current.WHICH);
-                }
                 if $action != DESCEND
                    && ($!last == BACKTRACK || !($!current ~~ GGE::Container)) {
                     my $participle
@@ -109,14 +98,22 @@ class GGE::TreeSpider {
                 if $!last == DESCEND {
                     push @!nodestack, $!current;
                 }
-                if $!current ~~ GGE::Backtracking && $action == MATCH {
-                    my $index = @!nodestack.end - 1;
-                    $index--
-                        until @!nodestack[$index] ~~ GGE::Backtracking;
-                    my $ancestor = @!nodestack[$index];
-                    (%!savepoints{$ancestor.WHICH} //= []).push(
+                if $!current ~~ GGE::Exp::Alt
+                   && $!last == DESCEND {
+                    @!savepoints.push(
                         [[@!nodestack.list], [@!padstack.list]]
                     );
+                }
+                if $!current ~~ GGE::Backtracking && $action == MATCH {
+                    if $!current ~~ GGE::Exp::Quant
+                       && $!current.hash-access('backtrack') == NONE {
+                        @!savepoints.=splice(0, %pad<ratchet-savepoints>);
+                    }
+                    else {
+                        @!savepoints.push(
+                            [[@!nodestack.list], [@!padstack.list]]
+                        );
+                    }
                 }
                 if $!current ~~ GGE::Exp::CGroup {
                     given $action {
@@ -154,15 +151,31 @@ class GGE::TreeSpider {
                     my $cname = $!current[0].hash-access('cname');
                     @!capstack[*-1].[$cname] = $array;
                 }
+                elsif $!current ~~ GGE::Exp::Group && $!last == FAIL_GROUP {
+                    @!savepoints.=splice(0, %pad<group-savepoints>);
+                }
                 if $action == DESCEND {
                     $!current = $!current[ $!current ~~ GGE::MultiChild
                                            ?? %pad<child> !! 0 ];
                 }
                 else {
                     pop @!nodestack;
-                    last unless @!nodestack;
-                    $!current = @!nodestack[*-1];
-                    pop @!padstack;
+                    if $action == FAIL && ! @!nodestack && @!savepoints {
+                        my @sp = @!savepoints.pop.list;
+                        @!nodestack = @sp[0].list;
+                        @!padstack  = @sp[1].list;
+                        $!current = @!nodestack[*-1];
+                        $!last = BACKTRACK;
+                        next;
+                    }
+                    if @!nodestack {
+                        $!current = @!nodestack[*-1];
+                        pop @!padstack;
+                    }
+                    else {
+                        $!last = $action;
+                        last;
+                    }
                 }
                 $!last = $action;
             }
