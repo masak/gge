@@ -127,6 +127,7 @@ class GGE::TreeSpider {
                         when MATCH {
                             my $cap = @!capstack.pop;
                             $cap.to = $!pos;
+                            $cap.delete('isscope');
                             # Find a capture that is a scope.
                             my $ix = @!capstack.end;
                             --$ix
@@ -144,7 +145,13 @@ class GGE::TreeSpider {
                             }
                             else {
                                 my $cname = $!current.hash-access('cname');
-                                $topcap[$cname] = $cap;
+                                if $cname.substr(0, 1) eq q['] {
+                                    my $key = $cname.substr(1, -1);
+                                    $topcap.hash-access($key) = $cap;
+                                }
+                                else {
+                                    $topcap[$cname] = $cap;
+                                }
                             }
                         }
                         when FAIL | FAIL_GROUP | FAIL_RULE {

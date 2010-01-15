@@ -328,4 +328,7 @@ class GGE::Exp::Scalar is GGE::Exp does GGE::ShowContents {
 }
 
 class GGE::Exp::Alias is GGE::Exp {
+    method contents() {
+        self.hash-access('cname');
+    }
 }

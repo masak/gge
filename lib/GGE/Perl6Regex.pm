@@ -420,6 +420,18 @@ class GGE::Perl6Regex {
     sub parse_dollar($mob) {
         my $pos = $mob.to;
         my $target = $mob.target;
+        if $target.substr($pos, 1) eq '<' {
+            my $closing-pos = $target.index('>', $pos);
+            die "perl6regex parse error: Missing close '>' in scalar"
+                unless defined $closing-pos;
+            my $m = GGE::Exp::Scalar.new($mob);
+            # XXX: PGE escapes the thing here. Not sure about exactly how.
+            $m.hash-access('cname')
+                = sprintf "'%s'",
+                          $target.substr($pos + 1, $closing-pos - $pos - 1);
+            $m.to = $closing-pos + 1;
+            return $m;
+        }
         ++$pos while $target.substr($pos, 1) ~~ /\d/;
         if $pos > $mob.to {
             my $m = GGE::Exp::Scalar.new($mob);

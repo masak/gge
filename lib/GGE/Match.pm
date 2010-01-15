@@ -8,6 +8,7 @@ class Store {
     method hash-access($key) { %!hash{$key} }
     method hash-exists($key) { %!hash.exists($key) }
     method hash-delete($key) { %!hash.delete($key) }
+    method hash-keys()       { %!hash.keys() }
 
     method array-access($index) { @!array[$index] }
     method array-setelem($index, $value) { @!array[$index] = $value }
@@ -65,6 +66,25 @@ class GGE::Match {
                 }
             }
         }
+        for self.keys -> $key {
+            my $elem = self.hash-access($key);
+            my $name = [~] $prefix, '<', $key, '>';
+            given $elem {
+                when !.defined { next }
+                when GGE::Match {
+                    $out ~= $elem.dump_str($name, $b1, $b2);
+                }
+                when List {
+                    for $elem.list.kv -> $i2, $e2 {
+                        my $n2 = [~] $name, $b1, $i2, $b2;
+                        $out ~= $e2.dump_str($n2, $b1, $b2);
+                    }
+                }
+                when * {
+                    say "Oops, don't know what to do with {$elem.WHAT} at $key";
+                }
+            }
+        }
         return $out;
     }
 
@@ -88,6 +108,8 @@ class GGE::Match {
     method exists($key) { $!store.hash-exists($key) }
 
     method delete($key) { $!store.hash-delete($key) }
+
+    method keys() { $!store.hash-keys() }
 
     method push($submatch) {
         $!store.array-push($submatch);
