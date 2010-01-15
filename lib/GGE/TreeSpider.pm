@@ -83,6 +83,29 @@ class GGE::TreeSpider {
                     when FAIL_RULE  { $!current.failed-rule($!pos, %pad)     }
                     when *          { die 'Unknown action ', $!last.name     }
                 };
+                if $!current ~~ GGE::Exp::Scalar {
+                    # Find a capture that is a scope.
+                    my $ix = @!capstack.end;
+                    --$ix
+                        while $ix > 0
+                              && @!capstack[$ix] !~~ Array
+                              && ! @!capstack[$ix].hash-access('isscope');
+                    my $topcap = @!capstack[$ix];
+                    my $cname = $!current.hash-access('cname');
+                    my $subrule = $cname.substr(0, 1) eq "'"
+                                  ?? $topcap.hash-access($cname.substr(1, -1))
+                                  !! $topcap[$cname];
+                    my $backref = $subrule ~~ Array
+                                  ?? ~$subrule[*-1]
+                                  !! ~$subrule;
+                    if $!pos <= $!target.chars - $backref.chars
+                       && $!target.substr($!pos, $backref.chars) eq $backref {
+                        $!pos += $backref.chars;
+                    }
+                    else {
+                        $action = FAIL;
+                    }
+                }
                 if $action != DESCEND
                    && ($!last == BACKTRACK || !($!current ~~ GGE::Container)) {
                     my $participle
