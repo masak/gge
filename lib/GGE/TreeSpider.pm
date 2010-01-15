@@ -52,7 +52,7 @@ class GGE::TreeSpider {
                 my $fragment = ($!target ~ '«END»').substr($!pos, 5)\
                                .trans( [ "\n", "\t" ] => [ "\\n", "\\t" ] )\
                                .substr(0, 5);
-                if $!last == BACKTRACK {
+                if $!last == BACKTRACK|FAIL|FAIL_GROUP {
                     $!pos = %pad<pos>;
                 }
                 if $!current ~~ GGE::Exp::CGroup
