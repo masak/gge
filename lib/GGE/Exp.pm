@@ -1,11 +1,15 @@
 use v6;
 use GGE::Match;
 
+# a GGE::Exp describing what it contains, most commonly its .ast property,
+# but sometimes other things.
 role GGE::ShowContents {
     method contents() {
         self.ast;
     }
 }
+
+# The set of possible responses sent back to GGE::TreeSpider.
 
 # RAKUDO: Could name this one GGE::Exp::Actions or something, if enums
 #         with '::' in them worked, which they don't. [perl #71460]
@@ -307,7 +311,7 @@ class GGE::Exp::Group is GGE::Exp does GGE::Container {
     method failed-group($, %) { FAIL }
 }
 
-class GGE::Exp::CGroup is GGE::Exp does GGE::Container does GGE::Backtracking {
+class GGE::Exp::CGroup is GGE::Group does GGE::Backtracking {
     method start($, $, %) { DESCEND }
     method failed-group($, %) { FAIL }
     method backtracked($, %) { FAIL }
