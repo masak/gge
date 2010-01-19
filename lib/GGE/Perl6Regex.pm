@@ -2,43 +2,62 @@ use v6;
 use GGE::Match;
 use GGE::Exp;
 use GGE::OPTable;
-use GGE::TreeSpider;
 
-class GGE::Exp::WS is GGE::Exp does GGE::Backtracking {
-    # XXX: This class should really derive from GGE::Exp::Subrule, but
-    #      that class hasn't been implemented yet, so...
-    method start($string, $pos is rw, %pad) {
-        %pad<from> = $pos;
-        if $pos >= $string.chars {
-            %pad<mpos> = $pos;
-            MATCH
-        }
-        elsif $pos == 0 || $string.substr($pos, 1) ~~ /\W/
-              || $string.substr($pos - 1, 1) ~~ /\W/ {
-            while $pos < $string.chars && $string.substr($pos, 1) ~~ /\s/ {
-                ++$pos;
+class GGE::Exp::WS is GGE::Exp {
+    # The below code is a working implementation of <.ws>, but it shouldn't
+    # be defined here. It should be defined in a method called 'ws' in the
+    # GGE::Match class. However, before we start calling other rules, this
+    # will do.
+    method p6($code, $label, $next) {
+        my %args = self.getargs($label, $next);
+        my $replabel = $label ~ '_repeat';
+        $code.emit( q[[
+            when '%L' { # ws
+                if $pos >= $lastpos {
+                    goto('%S');
+                }
+                elsif $pos == 0 || $target.substr($pos, 1) ~~ /\W/
+                      || $target.substr($pos - 1, 1) ~~ /\W/ {
+                    push @gpad, 0;
+                    local-branch('%0');
+                }
+                else {
+                    goto('fail');
+                }
             }
-            %pad<mpos> = $pos;
-            MATCH
-        }
-        else {
-            FAIL
-        }
-    }
-
-    method backtracked($_: $pos is rw, %pad) {
-        $pos = --%pad<mpos>;
-        if $pos >= %pad<from> {
-            MATCH
-        }
-        else {
-            FAIL
-        }
+            when '%L_cont' {
+                pop @gpad;
+                goto('fail');
+            }
+            when '%0' {
+                $rep = @gpad[*-1];
+                ++$rep;
+                if $target.substr($pos, 1) ~~ /\s/ {
+                    ++$pos;
+                    goto('%0');
+                    break;
+                }
+                if $cutmark != 0 { goto('fail'); break; }
+                --$rep;
+                goto('%L_1')
+            }
+            when '%L_1' {
+                pop @gpad;
+                push @ustack, $rep;
+                local-branch('%S');
+            }
+            when '%L_1_cont' {
+                $rep = pop @ustack;
+                push @gpad, $rep;
+                if $cutmark != 0 { goto('fail'); break; }
+                goto('fail');
+            } ]], $replabel, |%args);
     }
 }
 
 class GGE::Perl6Regex {
-    has $!regex;
+    has GGE::Exp $!exp;
+    has Callable $!binary;
 
     my &unescape = -> @codes { join '', map { chr(:16($_)) }, @codes };
     my $h-whitespace = unescape <0009 0020 00a0 1680 180e 2000 2001 2002 2003
@@ -54,95 +73,93 @@ class GGE::Perl6Regex {
         't' => "\t",
     ;
 
-    method new($pattern) {
-        my $optable = GGE::OPTable.new();
-        $optable.newtok('term:',     :precedence('='),
-                        :nows, :parsed(&GGE::Perl6Regex::parse_term));
-        $optable.newtok('term:#',    :equiv<term:>,
-                        :nows, :parsed(&GGE::Perl6Regex::parse_term_ws));
-        $optable.newtok('term:\\',   :equiv<term:>,
-                        :nows, :parsed(&GGE::Perl6Regex::parse_term_backslash));
-        $optable.newtok('term:^',    :equiv<term:>,
-                        :nows, :match(GGE::Exp::Anchor));
-        $optable.newtok('term:^^',   :equiv<term:>,
-                        :nows, :match(GGE::Exp::Anchor));
-        $optable.newtok('term:$$',   :equiv<term:>,
-                        :nows, :match(GGE::Exp::Anchor));
-        $optable.newtok('term:<<',   :equiv<term:>,
-                        :nows, :match(GGE::Exp::Anchor));
-        $optable.newtok('term:>>',   :equiv<term:>,
-                        :nows, :match(GGE::Exp::Anchor));
-        $optable.newtok('term:.',    :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\d',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\D',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\s',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\S',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\w',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\W',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\N',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::CCShortcut));
-        $optable.newtok('term:\\n',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::Newline));
-        $optable.newtok('term:$',    :equiv<term:>,
-                        :nows, :parsed(&GGE::Perl6Regex::parse_dollar));
-        $optable.newtok('term:<[',   :equiv<term:>,
-                        :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
-        $optable.newtok('term:<-',   :equiv<term:>,
-                        :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
-        $optable.newtok("term:'",    :equiv<term:>,
-                        :nows, :parsed(&GGE::Perl6Regex::parse_quoted_literal));
-        $optable.newtok('term:::',   :equiv<term:>,
-                        :nows, :match(GGE::Exp::Cut));
-        $optable.newtok('term::::',  :equiv<term:>,
-                        :nows, :match(GGE::Exp::Cut));
-        $optable.newtok('term:<commit>', :equiv<term:>,
-                        :nows, :match(GGE::Exp::Cut));
-        $optable.newtok('circumfix:[ ]', :equiv<term:>,
-                        :nows, :match(GGE::Exp::Group));
-        $optable.newtok('circumfix:( )', :equiv<term:>,
-                        :nows, :match(GGE::Exp::CGroup));
-        $optable.newtok('postfix:*', :looser<term:>,
-                        :parsed(&GGE::Perl6Regex::parse_quant));
-        $optable.newtok('postfix:+', :equiv<postfix:*>,
-                        :parsed(&GGE::Perl6Regex::parse_quant));
-        $optable.newtok('postfix:?', :equiv<postfix:*>,
-                        :parsed(&GGE::Perl6Regex::parse_quant));
-        $optable.newtok('postfix::', :equiv<postfix:*>,
-                        :parsed(&GGE::Perl6Regex::parse_quant));
-        $optable.newtok('postfix:**', :equiv<postfix:*>,
-                        :parsed(&GGE::Perl6Regex::parse_quant));
-        $optable.newtok('infix:',    :looser<postfix:*>, :assoc<list>,
-                        :nows, :match(GGE::Exp::Concat));
-        $optable.newtok('infix:&',   :looser<infix:>,
-                        :nows, :match(GGE::Exp::Conj));
-        $optable.newtok('infix:|',   :looser<infix:&>,
-                        :nows, :match(GGE::Exp::Alt));
-        $optable.newtok('prefix:|',  :equiv<infix:|>,
-                        :nows, :match(GGE::Exp::Alt));
-        $optable.newtok('infix:=',   :tighter<infix:>, :assoc<right>,
-                        :match(GGE::Exp::Alias));
-        $optable.newtok('prefix::',  :looser<infix:|>,
-                        :parsed(&GGE::Perl6Regex::parse_modifier));
+    my $optable = GGE::OPTable.new();
+    $optable.newtok('term:',     :precedence('='),
+                    :nows, :parsed(&GGE::Perl6Regex::parse_term));
+    $optable.newtok('term:#',    :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_term_ws));
+    $optable.newtok('term:\\',   :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_term_backslash));
+    $optable.newtok('term:^',    :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:^^',   :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:$$',   :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:<<',   :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:>>',   :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:.',    :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\d',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\D',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\s',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\S',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\w',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\W',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\N',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::CCShortcut));
+    $optable.newtok('term:\\n',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::Newline));
+    $optable.newtok('term:$',    :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_dollar));
+    $optable.newtok('term:<[',   :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
+    $optable.newtok('term:<-',   :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
+    $optable.newtok("term:'",    :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_quoted_literal));
+    $optable.newtok('term:::',   :equiv<term:>,
+                    :nows, :match(GGE::Exp::Cut));
+    $optable.newtok('term::::',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::Cut));
+    $optable.newtok('term:<commit>', :equiv<term:>,
+                    :nows, :match(GGE::Exp::Cut));
+    $optable.newtok('circumfix:[ ]', :equiv<term:>,
+                    :nows, :match(GGE::Exp::Group));
+    $optable.newtok('circumfix:( )', :equiv<term:>,
+                    :nows, :match(GGE::Exp::CGroup));
+    $optable.newtok('postfix:*', :looser<term:>,
+                    :parsed(&GGE::Perl6Regex::parse_quant));
+    $optable.newtok('postfix:+', :equiv<postfix:*>,
+                    :parsed(&GGE::Perl6Regex::parse_quant));
+    $optable.newtok('postfix:?', :equiv<postfix:*>,
+                    :parsed(&GGE::Perl6Regex::parse_quant));
+    $optable.newtok('postfix::', :equiv<postfix:*>,
+                    :parsed(&GGE::Perl6Regex::parse_quant));
+    $optable.newtok('postfix:**', :equiv<postfix:*>,
+                    :parsed(&GGE::Perl6Regex::parse_quant));
+    $optable.newtok('infix:',    :looser<postfix:*>, :assoc<list>,
+                    :nows, :match(GGE::Exp::Concat));
+    $optable.newtok('infix:&',   :looser<infix:>,
+                    :nows, :match(GGE::Exp::Conj));
+    $optable.newtok('infix:|',   :looser<infix:&>,
+                    :nows, :match(GGE::Exp::Alt));
+    $optable.newtok('prefix:|',  :equiv<infix:|>,
+                    :nows, :match(GGE::Exp::Alt));
+    $optable.newtok('infix:=',   :tighter<infix:>, :assoc<right>,
+                    :match(GGE::Exp::Alias));
+    $optable.newtok('prefix::',  :looser<infix:|>,
+                    :parsed(&GGE::Perl6Regex::parse_modifier));
+
+    method new($pattern, :$debug) {
         my $match = $optable.parse($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
-        my $expr = $match.hash-access('expr');
-        return self.bless(*, :regex(perl6exp($expr, {})));
+        my $exp = perl6exp($match.hash-access('expr'), {});
+        my $binary = $exp.compile(:$debug);
+        return self.bless(*, :$exp, :$binary);
     }
 
     method postcircumfix:<( )>($target, :$debug) {
-        if $debug {
-            say $!regex.structure;
-            say '';
-        }
-        GGE::TreeSpider.new(:$!regex, :$target, :pos(*)).crawl(:$debug);
+        $!binary($target, :$debug);
     }
 
     sub parse_term($mob) {
@@ -405,6 +422,9 @@ class GGE::Perl6Regex {
             if $m.target.substr($m.to, 2) eq '..' {
                 $m.to += 2;
                 $m.hash-access('max') = $m.target.substr($m.to, 1);
+                if $m.hash-access('max') eq '*' {
+                    $m.hash-access('max') = 'Inf';
+                }
                 ++$m.to;
             }
             if $brackets {
@@ -493,7 +513,7 @@ class GGE::Perl6Regex {
         %pad{$key} = $exp.ast;
         $exp[0] = perl6exp($exp[0], %pad);
         %pad{$key} = $temp;
-        return $exp;
+        return $exp[0];
     }
 
     multi sub perl6exp(GGE::Exp::Concat $exp is rw, %pad) {
@@ -556,6 +576,7 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::CGroup $exp is rw, %pad) {
+        $exp.hash-access('iscapture') = True;
         unless $exp.exists('isscope') {
             $exp.hash-access('isscope') = True;
         }

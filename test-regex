@@ -7,9 +7,9 @@ die "Usage: ./test-regex <pattern> <target>"
 
 my ($pattern, $target) = @*ARGS;
 my GGE::Match $match
-    = GGE::Perl6Regex.new($pattern).(backslash_escape($target), :debug);
+    = GGE::Perl6Regex.new($pattern, :debug)\
+                        .( backslash_escape($target), :debug );
 
-say '';
 say $match ?? $match.dump_str('mob', ' ', '') !! "No match\n";
 
 sub backslash_escape($string) {

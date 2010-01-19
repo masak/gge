@@ -48,7 +48,9 @@ $1=[ (.) (.) (.) ] (.)			abcdefg	/mob 5: <d @ 3>/	perl5 numbered captures $1
 [(.)$0]+				bookkeeper	/mob 0 2: <e @ 5>/	backref $0[2]
 (.)*x					123x		/mob: <123x @ 0>/	repeated dot capture
 
+# todo :gge<no subrules yet>
 $<key>=<alpha>				12ab34		/mob<key>: <a @ 2>/	alias capture
+# todo :gge<no subrules yet>
 <key=alpha>				12ab34		/mob<key>: <a @ 2>/	alias capture
 
 ## vim: noexpandtab tabstop=4 shiftwidth=4
