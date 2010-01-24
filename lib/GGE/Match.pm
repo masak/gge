@@ -181,27 +181,24 @@ class GGE::Match {
         return $mob;
     }
 
-    method upper() {
+    method cclass($regex) {
         my $target = self.target;
         my $pos = self.to;
         my $mob = self.new(self);
-        if $pos < $target.chars
-           && (my $char = $target.substr($pos, 1)) ~~ /\w/
-           && $char ne $char.lc {
+        if $pos < $target.chars && $target.substr($pos, 1) ~~ $regex {
             $mob.to = $pos + 1;
         }
         return $mob;
     }
 
-    method lower() {
-        my $target = self.target;
-        my $pos = self.to;
-        my $mob = self.new(self);
-        if $pos < $target.chars
-           && (my $char = $target.substr($pos, 1)) ~~ /\w/
-           && $char ne $char.uc {
-            $mob.to = $pos + 1;
-        }
-        return $mob;
-    }
+    method upper()  { self.cclass: /<upper>/  }
+    method lower()  { self.cclass: /<lower>/  }
+    method alpha()  { self.cclass: /<alpha>/  }
+    method digit()  { self.cclass: /<digit>/  }
+    method xdigit() { self.cclass: /<xdigit>/ }
+    method space()  { self.cclass: /<space>/  }
+    method blank()  { self.cclass: /<blank>/  }
+    method cntrl()  { self.cclass: /<cntrl>/  }
+    method punct()  { self.cclass: /<punct>/  }
+    method alnum()  { self.cclass: /<alnum>/  }
 }
