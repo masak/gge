@@ -29,9 +29,9 @@ rx_charclass     63 DONE (a few todo tests remain)
 rx_backtrack     23 DONE (one todo test remains)
 rx_modifiers    102 DONE (a few todo tests remain)
 rx_captures      48 DONE (a few todo tests remain)
-rx_subrules      60 work in progress
+rx_subrules      60 DONE
+rx_lookarounds   33 work in progress
 
-rx_lookarounds   33 to be done
 rx_goal          11 to be done
 rx_syntax        33 to be done
 
@@ -59,11 +59,11 @@ Perl 6 rule features implemented
     <xdigit>, <space>, <cntrl>, <punct>
 * backreferences ($0, $1, $<foo>)
 * scalar subrule and subpattern aliases ($<foo>:=(...), $0:=(...))
+* composed character classes (<+alpha-[aeiou]>)
 
 
 Perl 6 rule features to-do
 --------------------------
-* composed character classes (<+alpha-[aeiou]>)
 * lookahead and lookbehind (<before> and <after>)
 * built-in rules: <null>, <fail>, <print>, <graph>,
     <blank>, <sp>, <lt>, <gt>, <dot>, <ws>, <p6rule>, <p5regexp>
