@@ -120,6 +120,8 @@ class GGE::Perl6Regex {
                     :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
     $optable.newtok('term:<[',   :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
+    $optable.newtok('term:<+',   :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
     $optable.newtok('term:<-',   :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
     $optable.newtok("term:'",    :equiv<term:>,
@@ -318,7 +320,22 @@ class GGE::Perl6Regex {
         my $target = $mob.target;
         my $pos = $mob.to;
         my $key = $mob.hash-access('KEY');
-        # This is only correct as long as we don't do subrules.
+        if $target.substr($pos, 1) ne '[' {
+            my ($subname, $newpos) = parse_subname($target, $pos);
+            die 'perl6regex parse error: Error parsing ',
+                'enumerated character class'
+                if $newpos == $pos;
+            my $term = GGE::Exp::Subrule.new($mob);
+            $term.from = $pos;
+            $term.to = $newpos + 1; # XXX: also a short-term lie
+            $term.hash-access('subname') = $subname;
+            $term.hash-access('iscapture') = False;
+            $pos = $newpos;
+            die "perl6regex parse error: Missing close '>' in ",
+                "enumerated character class"
+                if $target.substr($pos, 1) ne '>';
+            return $term; # well, later we might want to combine them...
+        }
         if $key ne '<[' {
             ++$pos;
         }
