@@ -478,10 +478,15 @@ class GGE::Exp::Modifier   is GGE::Exp does GGE::ShowContents {
 
 class GGE::Exp::EnumCharList is GGE::Exp does GGE::ShowContents {
     method contents() {
-        my $zw   = self.hash-access('iszerowidth') ?? 'zw '  !! '';
-        my $neg  = self.hash-access('isnegated')   ?? 'neg ' !! '';
+        my $prefix = '';
+        if self.hash-access('isnegated') {
+            $prefix = '-';
+            if self.hash-access('iszerowidth') {
+                $prefix = '!';
+            }
+        }
         my $list = self.ast;
-        qq[$zw$neg$list]
+        qq[<$prefix\[$list\]>]
     }
 
     method p6($code, $label, $next) {
