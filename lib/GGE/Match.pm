@@ -187,9 +187,19 @@ class GGE::Match {
         my $mob = self.new(self);
         if $pos < $target.chars
            && (my $char = $target.substr($pos, 1)) ~~ /\w/
-           && $char ne '_'
-           && $char !~~ /\d/
-           && $char eq $char.uc {
+           && $char ne $char.lc {
+            $mob.to = $pos + 1;
+        }
+        return $mob;
+    }
+
+    method lower() {
+        my $target = self.target;
+        my $pos = self.to;
+        my $mob = self.new(self);
+        if $pos < $target.chars
+           && (my $char = $target.substr($pos, 1)) ~~ /\w/
+           && $char ne $char.uc {
             $mob.to = $pos + 1;
         }
         return $mob;
