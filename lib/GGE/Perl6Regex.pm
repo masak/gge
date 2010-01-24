@@ -317,84 +317,124 @@ class GGE::Perl6Regex {
     }
 
     sub parse_enumcharclass($mob) {
+        my $m;
         my $target = $mob.target;
         my $pos = $mob.to;
-        my $key = $mob.hash-access('KEY');
-        if $target.substr($pos, 1) ne '[' {
-            my ($subname, $newpos) = parse_subname($target, $pos);
-            die 'perl6regex parse error: Error parsing ',
-                'enumerated character class'
-                if $newpos == $pos;
-            my $term = GGE::Exp::Subrule.new($mob);
-            $term.from = $pos;
-            $term.to = $newpos + 1; # XXX: also a short-term lie
-            $term.hash-access('subname') = $subname;
-            $term.hash-access('iscapture') = False;
-            $pos = $newpos;
-            die "perl6regex parse error: Missing close '>' in ",
-                "enumerated character class"
-                if $target.substr($pos, 1) ne '>';
-            return $term; # well, later we might want to combine them...
+        my $op = $mob.hash-access('KEY');
+        if $op.substr(-1) eq '[' {
+            $op .= chop;
         }
-        if $key ne '<[' {
-            ++$pos;
-        }
-        ++$pos while $target.substr($pos, 1) ~~ /\s/;
-        my Str $charlist = '';
-        my Bool $isrange = False;
-        while True {
-            die "perl6regex parse error: Missing close '>' or ']>' in ",
-                "enumerated character class"
-                if $pos >= $target.chars;
-            given my $char = $target.substr($pos, 1) {
-                when ']' {
-                    last;
-                }
-                when '.' {
-                    continue if $target.substr($pos, 2) ne '..';
-                    $pos += 2;
-                    ++$pos while $target.substr($pos, 1) ~~ /\s/;
-                    $isrange = True;
-                    next;
-                }
-                when '-' {
-                    die "perl6regex parse error: Unescaped '-' in charlist ",
-                        "(use '..' or '\\-')";
-                }
-                when '\\' {
+        loop {
+            my $term;
+            ++$pos while $target.substr($pos, 1) ~~ /\s/;
+            if $op eq '<'
+               || $target.substr($pos, 1) eq '[' { # enumerated character class
+                ++$pos unless $op eq '<';
+                my Str $charlist = '';
+                my Bool $isrange = False;
+                loop {
+                    die "perl6regex parse error: Missing close '>' or ']>' ",
+                        "in enumerated character class"
+                        if $pos >= $target.chars;
+                    given my $char = $target.substr($pos, 1) {
+                        when ']' {
+                            last;
+                        }
+                        when '.' {
+                            continue if $target.substr($pos, 2) ne '..';
+                            $pos += 2;
+                            ++$pos while $target.substr($pos, 1) ~~ /\s/;
+                            $isrange = True;
+                            next;
+                        }
+                        when '-' {
+                            die "perl6regex parse error: Unescaped '-' in ",
+                                "charlist (use '..' or '\\-')";
+                        }
+                        when '\\' {
+                            ++$pos;
+                            $char = $target.substr($pos, 1);
+                            continue;
+                        }
+                        when /\s/ {
+                            ++$pos;
+                            next;
+                        }
+                        if $isrange {
+                            $isrange = False;
+                            my $fromchar = $charlist.substr(-1, 1);
+                            die 'perl6regex parse error: backwards range ',
+                                "$fromchar..$char not allowed"
+                                if $fromchar gt $char;
+                            $charlist ~= $_ for $fromchar ^.. $char;
+                        }
+                        else {
+                            $charlist ~= $char;
+                        }
+                    }
                     ++$pos;
-                    $char = $target.substr($pos, 1);
-                    continue;
                 }
-                if $isrange {
-                    $isrange = False;
-                    my $fromchar = $charlist.substr(-1, 1);
-                    die 'perl6regex parse error: backwards range ',
-                        "$fromchar..$char not allowed"
-                        if $fromchar gt $char;
-                    $charlist ~= $_ for $fromchar ^.. $char;
+                ++$pos;
+                $term = GGE::Exp::EnumCharList.new($mob);
+                $term.to = $pos;
+                $term.make($charlist);
+            }
+            else { # subrule
+                my ($subname, $newpos) = parse_subname($target, $pos);
+                die 'perl6regex parse error: Error parsing ',
+                    'enumerated character class'
+                    if $newpos == $pos;
+                $term = GGE::Exp::Subrule.new($mob);
+                $term.from = $pos;
+                $term.to = $newpos;
+                $term.hash-access('subname') = $subname;
+                $term.hash-access('iscapture') = False;
+                $pos = $newpos;
+            }
+            if $op eq '+' {
+                my $alt = GGE::Exp::Alt.new($mob);
+                $alt.to = $pos;
+                $alt[0] = $m;
+                $alt[1] = $term;
+                $m = $alt;
+            }
+            elsif $op eq '-' {
+                $term.hash-access('isnegated') = True;
+                $term.hash-access('iszerowidth') = True;
+                my $concat = GGE::Exp::Concat.new($mob);
+                $concat.to = $pos;
+                $concat[0] = $term;
+                $concat[1] = $m;
+                $m = $concat;
+            }
+            elsif $op eq '<' | '<+' {
+                $m = $term;
+            }
+            else { # '<-' | '<!'
+                $term.hash-access('isnegated') = True;
+                $term.hash-access('iszerowidth') = True;
+                if $op eq '<!' {
+                    $m = $term;
                 }
                 else {
-                    $charlist ~= $char;
+                    $m = GGE::Exp::Concat.new($mob);
+                    my $dot = GGE::Exp::CCShortcut.new($mob);
+                    $dot.make('.');
+                    $m.to = $pos;
+                    $m[0] = $term;
+                    $m[1] = $dot;
                 }
             }
-            ++$pos;
             ++$pos while $target.substr($pos, 1) ~~ /\s/;
+            $op = $target.substr($pos, 1);
+            ++$pos;
+            next if $op eq '+' | '-';
+            last if $op eq '>';
+            die 'perl6regex parse error: Error parsing ',
+                'enumerated character class';
         }
-        my $term = GGE::Exp::EnumCharList.new($mob);
-        $term.make($charlist);
-        if $key eq '<-' {
-            $term.hash-access('isnegated') = True;
-            $term.hash-access('iszerowidth') = True;
-            my $subtraction = GGE::Exp::Concat.new($mob);
-            my $everything = GGE::Exp::CCShortcut.new($mob);
-            $everything.make('.');
-            $subtraction[0] = $term;
-            $subtraction[1] = $everything;
-            $term = $subtraction;
-        }
-        $term.to = $pos + 2;
-        return $term;
+        $m.to = $pos;
+        return $m;
     }
 
     sub parse_quoted_literal($mob) {
