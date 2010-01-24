@@ -151,4 +151,21 @@ class GGE::Match {
         # RAKUDO: Putting 'return' here makes Rakudo blow up.
         $mob;
     }
+
+    method name() {
+        # XXX: PGE does this by code-generating a token at PGE compile time.
+        #      That's a bit nicer, because it provides backtracking for free.
+        #      GGE might do that too when it proves necessary.
+        my $target = self.target;
+        my $pos = self.to;
+        my $m = self.ident();
+        while $m.to > $pos && $target.substr($m.to, 2) eq '::' {
+            $pos = $m.to += 2;
+            $m = $m.ident();
+            if $m.to == -1 {
+                $m.to = $pos - 2;
+            }
+        }
+        return $m;
+    }
 }
