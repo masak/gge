@@ -168,4 +168,16 @@ class GGE::Match {
         }
         return $m;
     }
+
+    method wb() {
+        my $target = self.target;
+        my $pos = self.to;
+        my $mob = self.new(self);
+        if $pos == 0 || $pos == $target.chars
+           || ($target.substr($pos - 1, 1) ~~ /\w/
+               xor $target.substr($pos, 1) ~~ /\w/) {
+            $mob.to = $pos;
+        }
+        return $mob;
+    }
 }
