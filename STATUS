@@ -15,15 +15,10 @@ value. (No real obstacle to that one; just haven't found it necessary.)
 All tests pass in rx_metachars. A few tests are marked TODO in rx_charclass,
 having to do with double-quoted literals. The test marked TODO in rx_backtrack
 is marked TODO in PGE as well, and pmichaud has confirmed it's likely bogus.
+
 Some tests had to be marked TODO in rx_modifiers, because they used lookahead,
 which isn't implemented yet. Some TODOs in rx_captures were inherited from
-PGE, others await the implementation of subrules.
-
-There are two features I can see that need to be implemented for the rest
-of the tests to pass. The first is some kind of stacking of TreeSpider
-objects. This is needed for subrule calls, which form a sort of 'regex in a
-regex', both statically and dynamically.  The second is a mechanism for
-building real Match objects, replete with numbered and named captures.
+PGE.
 
 name          tests status
 --------------------------------------------------
@@ -54,24 +49,24 @@ Perl 6 rule features implemented
 * anchors (^, $, ^^, $$, \b, \b)
 * \c[...] and \C[...]
 * cut operators (:, ::, :::, <commit>)
-
-
-Perl 6 rule features to-do
---------------------------
 * capturing groups
 * modifiers :i, :ignorecase, :s, :sigspace (with synonyms :w and :words)
-* composed character classes (<+alpha-[aeiou]>)
 * negated character classes 
 * capturing subrules (<expr>)
 * non-capturing subrules  (<.expr>)
 * negated subrules (<!expr>)
-* lookahead and lookbehind (<before> and <after>)
-* built-in rules: <null>, <fail>, <alpha>, <digit>, <alnum>, 
-    <upper>, <lower>, <xdigit>, <space>, <print>, <graph>,
-    <blank>, <cntrl>, <punct>, <sp>, <lt>, <gt>, <dot>, <ws>,
-    <p6rule>, <p5regexp>
+* built-in rules: <alpha>, <digit>, <alnum>, <upper>, <lower>,
+    <xdigit>, <space>, <cntrl>, <punct>
 * backreferences ($0, $1, $<foo>)
 * scalar subrule and subpattern aliases ($<foo>:=(...), $0:=(...))
+
+
+Perl 6 rule features to-do
+--------------------------
+* composed character classes (<+alpha-[aeiou]>)
+* lookahead and lookbehind (<before> and <after>)
+* built-in rules: <null>, <fail>, <print>, <graph>,
+    <blank>, <sp>, <lt>, <gt>, <dot>, <ws>, <p6rule>, <p5regexp>
 * balanced delimited text (<GGE::Text::bracketed>)
 * embedded closures ({{ puts "hello" }})
 * :lang() modifier
