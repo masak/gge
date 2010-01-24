@@ -116,6 +116,8 @@ class GGE::Perl6Regex {
                     :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
     $optable.newtok('term:<?',   :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
+    $optable.newtok('term:<!',   :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
     $optable.newtok('term:<[',   :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
     $optable.newtok('term:<-',   :equiv<term:>,
@@ -294,6 +296,13 @@ class GGE::Perl6Regex {
     sub parse_subrule($mob) {
         my $m = GGE::Exp::Subrule.new($mob);
         my $target = $mob.target;
+        my $key = $mob.hash-access('KEY');
+        if $key eq '<!' {
+            $m.hash-access('isnegated') = True;
+        }
+        if $key eq '<?' | '<!' {
+            $m.hash-access('iszerowidth') = True;
+        }
         my ($subname, $pos) = parse_subname($target, $mob.to);
         $m.hash-access('subname') = $subname;
         if $target.substr($pos, 1) eq '>' {

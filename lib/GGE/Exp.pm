@@ -709,7 +709,17 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
                     die "Unable to find regex '%0'";
                 }
                 $captob = $captob.%0(); ]], $subname, |%args);
-        $code.emit( q[[
+        if self.hash-access('iszerowidth') {
+            my $test = self.hash-access('isnegated') ?? 'unless' !! 'if';
+            $code.emit( q[[
+                # XXX: fail match
+                %1 $captob.to < 0 { goto('fail'); break; }
+                $captob.from = $captob.to = $pos;
+                goto('%2');
+            } ]], "XXX: fail match", $test, $next);
+        }
+        else {
+            $code.emit( q[[
                 # XXX: fail match
                 if $captob.to < 0 { goto('fail'); break; }
                 %2
@@ -722,5 +732,6 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
                 %4
                 goto('fail');
             } ]], CUT_MATCH, $next, $captgen, $captsave, $captback, |%args);
+        }
     }
 }
