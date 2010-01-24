@@ -695,3 +695,32 @@ class GGE::Exp::Alias is GGE::Exp {
         self.hash-access('cname');
     }
 }
+
+class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
+    method p6($code, $label, $next) {
+        my %args = self.getargs($label, $next);
+        my $subname = self.hash-access('subname');
+        my ($captgen, $captsave, $captback) = self.gencapture($label);
+        $code.emit( q[[
+            when '%L' {
+                $captob = $captscope;
+                $captob.to = $pos;
+                unless $mob.can('%0') {
+                    die "Unable to find regex '%0'";
+                }
+                $captob = $captob.%0(); ]], $subname, |%args);
+        $code.emit( q[[
+                # XXX: fail match
+                if $captob.to < 0 { goto('fail'); break; }
+                %2
+                %3
+                $captob.from = $pos; # XXX: No corresponding line in PGE
+                $pos = $captob.to;
+                local-branch('%1'); # XXX: PGE does backtracking into subrules
+            }
+            when '%L_cont' {
+                %4
+                goto('fail');
+            } ]], CUT_MATCH, $next, $captgen, $captsave, $captback, |%args);
+    }
+}

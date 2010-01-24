@@ -3,7 +3,7 @@ use GGE::Match;
 use GGE::Exp;
 use GGE::OPTable;
 
-class GGE::Exp::WS is GGE::Exp {
+class GGE::Exp::WS is GGE::Exp::Subrule {
     # The below code is a working implementation of <.ws>, but it shouldn't
     # be defined here. It should be defined in a method called 'ws' in the
     # GGE::Match class. However, before we start calling other rules, this
@@ -110,6 +110,8 @@ class GGE::Perl6Regex {
                     :nows, :match(GGE::Exp::Newline));
     $optable.newtok('term:$',    :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_dollar));
+    $optable.newtok('term:<',    :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
     $optable.newtok('term:<[',   :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
     $optable.newtok('term:<-',   :equiv<term:>,
@@ -271,6 +273,31 @@ class GGE::Perl6Regex {
         my $m = GGE::Exp::Literal.new($mob);
         $m.make($backchar);
         $m.to = $mob.to + 1;
+        return $m;
+    }
+
+    sub parse_subname($target, $pos is copy) {
+        my $targetlen = $target.chars;
+        my $startpos = $pos;
+        while $pos < $targetlen && $target.substr($pos, 1) ~~ /\w/ {
+            ++$pos;
+        }
+        my $subname = $target.substr($startpos, $pos - $startpos);
+        # RAKUDO: Can only return one thing. Returning a list as a workaround.
+        return ($subname, $pos);
+    }
+
+    sub parse_subrule($mob) {
+        my $m = GGE::Exp::Subrule.new($mob);
+        my $target = $mob.target;
+        my ($subname, $pos) = parse_subname($target, $mob.to);
+        $m.hash-access('subname') = $subname;
+        if $target.substr($pos, 1) eq '>' {
+            ++$pos;
+            $m.to = $pos;
+            $m.hash-access('iscapture') = True;
+            $m.hash-access('cname') = q['] ~ $subname ~ q['];
+        }
         return $m;
     }
 
