@@ -7,13 +7,13 @@ my %cached;
 sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() } #' (vim fix)
 
 my @test-files = <
-    subrules
     metachars
     quantifiers
     backtrack
     charclass
     modifiers
     captures
+    subrules
 >;
 
 for @test-files -> $test-file {
