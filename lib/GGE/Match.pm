@@ -180,4 +180,18 @@ class GGE::Match {
         }
         return $mob;
     }
+
+    method upper() {
+        my $target = self.target;
+        my $pos = self.to;
+        my $mob = self.new(self);
+        if $pos < $target.chars
+           && (my $char = $target.substr($pos, 1)) ~~ /\w/
+           && $char ne '_'
+           && $char !~~ /\d/
+           && $char eq $char.uc {
+            $mob.to = $pos + 1;
+        }
+        return $mob;
+    }
 }
