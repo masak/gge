@@ -2,6 +2,8 @@ use v6;
 use Test;
 use GGE;
 
+my %cached;
+
 sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() } #' (vim fix)
 
 my @test-files = <
@@ -61,7 +63,7 @@ for @test-files -> $test-file {
 }
 
 sub match_perl6regex($pattern, $target) {
-    my $rule = GGE::Perl6Regex.new($pattern);
+    my $rule = %cached{$pattern} //= GGE::Perl6Regex.new($pattern);
     return $rule($target);
 }
 
