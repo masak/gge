@@ -14,10 +14,10 @@ value. (No real obstacle to that one; just haven't found it necessary.)
 
 All tests pass in rx_metachars. A few tests are marked TODO in rx_charclass,
 having to do with double-quoted literals. The test marked TODO in rx_backtrack
-is marked TODO in PGE as well, and looks suspicious to boot. Some tests had
-to be marked TODO in rx_modifiers, because they used lookahead or captures,
-neither of which are implemented yet. Work is currently ongoing in
-rx_captures.
+is marked TODO in PGE as well, and pmichaud has confirmed it's likely bogus.
+Some tests had to be marked TODO in rx_modifiers, because they used lookahead,
+which isn't implemented yet. Some TODOs in rx_captures were inherited from
+PGE, others await the implementation of subrules.
 
 There are two features I can see that need to be implemented for the rest
 of the tests to pass. The first is some kind of stacking of TreeSpider
@@ -33,9 +33,9 @@ rx_metachars    238 DONE
 rx_charclass     63 DONE (a few todo tests remain)
 rx_backtrack     23 DONE (one todo test remains)
 rx_modifiers    102 DONE (a few todo tests remain)
-rx_captures      48 work in progress
+rx_captures      48 DONE (a few todo tests remain)
+rx_subrules      60 work in progress
 
-rx_subrules      60 to be done
 rx_lookarounds   33 to be done
 rx_goal          11 to be done
 rx_syntax        33 to be done
