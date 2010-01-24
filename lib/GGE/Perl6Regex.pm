@@ -112,6 +112,8 @@ class GGE::Perl6Regex {
                     :nows, :parsed(&GGE::Perl6Regex::parse_dollar));
     $optable.newtok('term:<',    :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
+    $optable.newtok('term:<.',   :equiv<term:>,
+                    :nows, :parsed(&GGE::Perl6Regex::parse_subrule));
     $optable.newtok('term:<[',   :equiv<term:>,
                     :nows, :parsed(&GGE::Perl6Regex::parse_enumcharclass));
     $optable.newtok('term:<-',   :equiv<term:>,
