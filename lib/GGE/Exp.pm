@@ -163,32 +163,33 @@ class GGE::Exp is GGE::Match {
         my $captgen  = CodeString.new;
         my $captsave = CodeString.new;
         my $captback = CodeString.new;
+        my $indexing = $cname.substr(0, 1) eq q[']
+                        ?? "\$captscope.hash-access($cname)"
+                        !! "\$captscope[$cname]";
         if self.hash-access('iscapture') {
             if self.hash-access('isarray') {
-                $captsave.emit('$captscope[%0].push($captob);', $cname);
-                $captback.emit('$captscope[%0].pop();', $cname);
-                $captgen.emit( q[[if defined $captscope[%0] {
+                $captsave.emit('%0.push($captob);', $indexing);
+                $captback.emit('%0.pop();', $indexing);
+                $captgen.emit( q[[if defined %0 {
                     goto('%1_cgen');
                     break;
                 }
-                $captscope[%0] = [];
+                %0 = [];
                 local-branch('%1_cgen');
             }
             when '%1_cont' {
-                $captscope[%0] = undef;
+                %0 = undef;
                 goto('fail');
             }
-            when '%1_cgen' { ]], $cname, $label);
+            when '%1_cgen' { ]], $indexing, $label);
             }
             else {
+                $captsave.emit('%0 = $captob;', $indexing);
                 if $cname.substr(0, 1) eq q['] {
-                    $captsave.emit('$captscope.hash-access(%0) = $captob;',
-                                   $cname);
                     $captback.emit('$captscope.delete(%0);', $cname);
                 }
                 else {
-                    $captsave.emit('$captscope[%0] = $captob;', $cname);
-                    $captback.emit('$captscope[%0] = undef;', $cname);
+                    $captback.emit('%0 = undef;', $indexing);
                 }
             }
         }

@@ -163,7 +163,7 @@ class GGE::Perl6Regex {
         my $match = $optable.parse($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
-        my $exp = perl6exp($match.hash-access('expr'), {});
+        my $exp = perl6exp($match.hash-access('expr'), { lexscope => {} });
         my $binary = $exp.compile(:$debug);
         return self.bless(*, :$exp, :$binary);
     }
@@ -695,6 +695,18 @@ class GGE::Perl6Regex {
         else {
             $exp[0] = perl6exp($exp[0], %pad);
         }
+        return $exp;
+    }
+
+    multi sub perl6exp(GGE::Exp::Subrule $exp is rw, %pad) {
+        my $cname = $exp.hash-access('cname');
+        my $isarray = %pad<isarray> // undef;
+        if %pad<lexscope>.exists($cname) {
+            %pad<lexscope>{$cname}.hash-access('isarray') = True;
+            $isarray = True;
+        }
+        %pad<lexscope>{$cname} = $exp;
+        $exp.hash-access('isarray') = $isarray;
         return $exp;
     }
 
