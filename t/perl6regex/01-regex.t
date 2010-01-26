@@ -2,7 +2,8 @@ use v6;
 use Test;
 use GGE;
 
-my %cached;
+my $previous-pattern = '';
+my $previous-rule;
 
 sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() } #' (vim fix)
 
@@ -64,7 +65,11 @@ for @test-files -> $test-file {
 }
 
 sub match_perl6regex($pattern, $target) {
-    my $rule = %cached{$pattern} //= GGE::Perl6Regex.new($pattern);
+    my $rule = $pattern eq $previous-pattern
+        ?? $previous-rule
+        !! GGE::Perl6Regex.new($pattern);
+    $previous-pattern = $pattern;
+    $previous-rule = $rule;
     return $rule($target);
 }
 
