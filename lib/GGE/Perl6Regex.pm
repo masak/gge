@@ -258,13 +258,18 @@ class GGE::Perl6Regex {
             $m.hash-access('iszerowidth') = True;
         }
         my ($subname, $pos) = parse_subname($target, $mob.to);
-        $m.hash-access('subname') = $subname;
+        my $cname = $subname;
+        if $target.substr($pos, 1) eq '=' {
+            ++$pos;
+            ($subname, $pos) = parse_subname($target, $pos);
+        }
         if $target.substr($pos, 1) eq '>' {
             ++$pos;
             $m.to = $pos;
             $m.hash-access('iscapture') = True;
-            $m.hash-access('cname') = q['] ~ $subname ~ q['];
         }
+        $m.hash-access('subname') = $subname;
+        $m.hash-access('cname') = q['] ~ $cname ~ q['];
         return $m;
     }
 
