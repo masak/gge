@@ -4,55 +4,7 @@ use GGE::Exp;
 use GGE::OPTable;
 
 class GGE::Exp::WS is GGE::Exp::Subrule {
-    # The below code is a working implementation of <.ws>, but it shouldn't
-    # be defined here. It should be defined in a method called 'ws' in the
-    # GGE::Match class. However, before we start calling other rules, this
-    # will do.
-    method p6($code, $label, $next) {
-        my %args = self.getargs($label, $next);
-        my $replabel = $label ~ '_repeat';
-        $code.emit( q[[
-            when '%L' { # ws
-                if $pos >= $lastpos {
-                    goto('%S');
-                }
-                elsif $pos == 0 || $target.substr($pos, 1) ~~ /\W/
-                      || $target.substr($pos - 1, 1) ~~ /\W/ {
-                    push @gpad, 0;
-                    local-branch('%0');
-                }
-                else {
-                    goto('fail');
-                }
-            }
-            when '%L_cont' {
-                pop @gpad;
-                goto('fail');
-            }
-            when '%0' {
-                $rep = @gpad[*-1];
-                ++$rep;
-                if $target.substr($pos, 1) ~~ /\s/ {
-                    ++$pos;
-                    goto('%0');
-                    break;
-                }
-                if $cutmark != 0 { goto('fail'); break; }
-                --$rep;
-                goto('%L_1')
-            }
-            when '%L_1' {
-                pop @gpad;
-                push @ustack, $rep;
-                local-branch('%S');
-            }
-            when '%L_1_cont' {
-                $rep = pop @ustack;
-                push @gpad, $rep;
-                if $cutmark != 0 { goto('fail'); break; }
-                goto('fail');
-            } ]], $replabel, |%args);
-    }
+    method contents() { undef }
 }
 
 class GGE::Perl6Regex {
@@ -725,7 +677,8 @@ class GGE::Perl6Regex {
 
     multi sub perl6exp(GGE::Exp::WS $exp is rw, %pad) {
         if %pad<sigspace> {
-            # XXX: Should do stuff here. See PGE.
+            $exp.hash-access('subname') = 'ws';
+            $exp.hash-access('iscapture') = False;
             return $exp;
         }
         else {

@@ -201,4 +201,22 @@ class GGE::Match {
     method cntrl()  { self.cclass: /<cntrl>/  }
     method punct()  { self.cclass: /<punct>/  }
     method alnum()  { self.cclass: /<alnum>/  }
+
+    method ws() {
+        my $target = self.target;
+        my $pos = self.to;
+        my $mob = self.new(self);
+        if $pos >= $target.chars {
+            $mob.to = $pos;
+        }
+        elsif $pos == 0
+              || $target.substr($pos, 1) ~~ /\W/
+              || $target.substr($pos - 1, 1) ~~ /\W/ {
+            while $target.substr($pos, 1) ~~ /\s/ {
+                ++$pos;
+            }
+            $mob.to = $pos;
+        }
+        return $mob;
+    }
 }
