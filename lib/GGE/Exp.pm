@@ -8,7 +8,7 @@ class CodeString {
     method emit($string, *@args, *%kwargs) {
         $!contents ~= $string\
                         .subst(/\%(\d)/, {   @args[$0] // '...' }, :g)\
-                        .subst(/\%(\w)/, { %kwargs{$0} // '...' }, :g); 
+                        .subst(/\%(\w)/, { %kwargs{$0} // '...' }, :g);
     }
 
     method escape($string) {
@@ -239,7 +239,13 @@ class GGE::Exp::Quant is GGE::Exp {
     method p6($code, $label, $next) {
         my %args = self.getargs($label, $next, { quant => self });
         my $replabel = $label ~ '_repeat';
-        my $nextlabel = $code.unique('R');
+        my $explabel = $code.unique('R');
+        my $nextlabel = $explabel;
+        my $seplabel;
+        if self.hash-access('sep') {
+            $seplabel = $code.unique('R');
+            $nextlabel = $label ~ '_sep';
+        }
         %args<c C> = 0, '### ';
         given self.hash-access('backtrack') {
             when EAGER {
@@ -346,7 +352,15 @@ class GGE::Exp::Quant is GGE::Exp {
             } ]], $replabel, $nextlabel, |%args);
             }
         }
-        self[0].p6($code, $nextlabel, $replabel);
+        if self.hash-access('sep') -> $sep {
+            $code.emit( q[[
+            when '%0' {
+                if $rep == 1 { goto('%1'); break; }
+                goto('%2');
+            } ]], $nextlabel, $explabel, $seplabel);
+            $sep.p6($code, $seplabel, $explabel);
+        }
+        self[0].p6($code, $explabel, $replabel);
     }
 }
 

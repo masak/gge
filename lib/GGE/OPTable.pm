@@ -88,10 +88,12 @@ class GGE::OPTable {
         (%!keys{$key} //= []).push({%opts,});
     }
 
-    method parse($text, *%opts) {
-        my $m = GGE::Match.new(:target($text));
-        my $pos = 0;
-        my $tighter = %!tokens.exists(%opts<tighter>)
+    method parse($mob, *%opts) {
+        my $m = $mob ~~ GGE::Match ?? GGE::Match.new($mob)
+                                   !! GGE::Match.new(:target($mob), :from(0), :to(0));
+        my $target = $mob ~~ GGE::Match ?? $mob.target !! $mob;
+        my $pos = $mob ~~ GGE::Match ?? $mob.to !! 0;
+        my $tighter = defined %opts<tighter> && %!tokens.exists(%opts<tighter>)
                         ?? %!tokens{%opts<tighter>}<precedence>
                         !! '';
         my (@termstack, @tokenstack, @operstack);
@@ -123,7 +125,7 @@ class GGE::OPTable {
                                      $top<match> !! GGE::Match;
                     push @termstack, $matchclass.new(:from($pos),
                                                      :to($pos-1),
-                                                     :target($text));
+                                                     :$target);
                 }
             }
             if $reduce {
@@ -157,24 +159,24 @@ class GGE::OPTable {
                 }
             }
         };
-        while $pos < $text.chars {
+        while $pos < $target.chars {
             my $stop_matching = False;
             if $stoptoken
-               && $text.substr($pos, $stoptoken.chars) eq $stoptoken
+               && $target.substr($pos, $stoptoken.chars) eq $stoptoken
                && $circumnest == 0 {
                 $stop_matching = True;
                 last;
             }
             my $wspos = $pos;
-            $pos++ while $text.substr($pos, 1) ~~ /\s/;
+            $pos++ while $target.substr($pos, 1) ~~ /\s/;
             my $nows = $pos != $wspos;
-            my $key_firstchar = $text.substr($pos, 1);
+            my $key_firstchar = $target.substr($pos, 1);
             my $maxlength = %!klen{$key_firstchar} // 0;
-            my $key = $text.substr($pos, $maxlength);
+            my $key = $target.substr($pos, $maxlength);
             my $orig-key = $key;
             my $found_oper = False;
             loop {
-                if $text.substr($pos, $key.chars) ne $key {
+                if $target.substr($pos, $key.chars) ne $key {
                     last if $key eq '';
                     $key .= chop();
                     next;
@@ -193,7 +195,7 @@ class GGE::OPTable {
                                      %!tokens{$name}<match> !! GGE::Match;
                     my $oper = $matchclass.new(:from($pos),
                                                :to($pos + $key.chars),
-                                               :target($text));
+                                               :$target);
                     $oper.hash-access('type') = $name;
                     if $token.exists('parsed') {
                         my $routine = $token<parsed>;
@@ -216,7 +218,7 @@ class GGE::OPTable {
                             # Here we assume that what we got was a PGE regex
                             # routine, and we call it with the text we want
                             # to match as an argument.
-                            my $pge-match = $routine($text.substr($pos));
+                            my $pge-match = $routine($target.substr($pos));
                             if $pge-match.to >= 0 {
                                 $oper.to = $pos += $pge-match.to;
                                 $found_oper = True;
@@ -326,10 +328,10 @@ class GGE::OPTable {
                             # insert a dummy term to make reduce work
                             push @termstack, GGE::Match.new(:from($pos),
                                                             :to($pos-1),
-                                                            :target($text));
+                                                            :$target);
                             # There might be better ways to restart the loop,
                             # but let's do it this way for now.
-                            $key = $text.substr($pos, $maxlength);
+                            $key = $target.substr($pos, $maxlength);
                             next;
                         }
                         else {
@@ -357,7 +359,7 @@ class GGE::OPTable {
                 # insert a dummy term to make reduce work
                 push @termstack, GGE::Match.new(:from($pos),
                                                 :to($pos-1),
-                                                :target($text));
+                                                :$target);
             }
             while @tokenstack >= 1 {
                 reduce;

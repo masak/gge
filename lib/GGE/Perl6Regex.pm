@@ -112,7 +112,7 @@ class GGE::Perl6Regex {
                     :parsed(&GGE::Perl6Regex::parse_modifier));
 
     method new($pattern, :$debug) {
-        my $match = $optable.parse($pattern);
+        my $match = parse_regex($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
         my $exp = perl6exp($match.hash-access('expr'), { lexscope => {} });
@@ -122,6 +122,11 @@ class GGE::Perl6Regex {
 
     method postcircumfix:<( )>($target, :$debug) {
         $!binary($target, :$debug);
+    }
+
+    sub parse_regex($mob, :$tighter) {
+        my $p = $optable.parse($mob, :$tighter);
+        return $p;
     }
 
     sub parse_term($mob) {
@@ -465,26 +470,43 @@ class GGE::Perl6Regex {
         }
 
         if $key eq '**' {
-            my $brackets = False;
+            ++$m.to while $m.target.substr($m.to, 1) ~~ /\s/;
+            my $isconst = $m.target.substr($m.to, 1) ~~ /\d/;
+            my $sep = !$isconst;
             if $m.target.substr($m.to, 1) eq '{' {
-                $brackets = True;
+                $sep = False;
                 ++$m.to;
             }
-            # XXX: Need to generalize this into parsing several digits
-            $m.hash-access('min') = $m.hash-access('max') = $m.target.substr($m.to, 1);
-            ++$m.to;
-            if $m.target.substr($m.to, 2) eq '..' {
-                $m.to += 2;
-                $m.hash-access('max') = $m.target.substr($m.to, 1);
-                if $m.hash-access('max') eq '*' {
-                    $m.hash-access('max') = 'Inf';
+            if $sep {
+                my $repetition_controller = parse_regex($m, :tighter<infix:>);
+                die 'perl6regex parse error: Error in repetition controller'
+                    unless $repetition_controller;
+                my $pos = $repetition_controller.to;
+                $repetition_controller .= hash-access('expr');
+                $m.hash-access('sep') = $repetition_controller;
+                $m.hash-access('min') = 1;
+                $m.hash-access('max') = Inf;
+                $m.to = $pos;
+            }
+            else {
+                # XXX: Add test against non-digits inside braces .**{x..z}
+                # XXX: Need to generalize this into parsing several digits
+                $m.hash-access('min') = $m.hash-access('max')
+                                      = $m.target.substr($m.to, 1);
+                ++$m.to;
+                if $m.target.substr($m.to, 2) eq '..' {
+                    $m.to += 2;
+                    $m.hash-access('max') = $m.target.substr($m.to, 1);
+                    if $m.hash-access('max') eq '*' {
+                        $m.hash-access('max') = 'Inf';
+                    }
+                    ++$m.to;
                 }
-                ++$m.to;
-            }
-            if $brackets {
-                die 'No "}" found'
-                    unless $m.target.substr($m.to, 1) eq '}';
-                ++$m.to
+                if !$isconst {
+                    die 'No "}" found'
+                        unless $m.target.substr($m.to, 1) eq '}';
+                    ++$m.to
+                }
             }
         }
 
