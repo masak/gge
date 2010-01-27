@@ -160,10 +160,18 @@ for ['term:',         precedence => '=', :parsed($ident)           ],
 optable_output_is( '[a]|b', 'infix:|(circumfix:[ ](term:a), term:b)',
                    'infix and circumfix' );
 
+$optable .= new;
 
-sub optable_output_is($test, $expected, $msg) {
+for ['term:',         precedence => '=', :parsed($ident)           ],
+    ['infix:',        looser     => 'term:', :assoc<list>, :nows   ]
+-> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+
+optable_output_is( 'a b', 'term:a (pos=1)', ':tighter option',
+                   :tighter<infix:> );
+
+sub optable_output_is($test, $expected, $msg, *%opts) {
     my $output;
-    if $optable.parse($test, :stop(' ;')) -> $match {
+    if $optable.parse($test, :stop(' ;'), |%opts) -> $match {
         $output = tree($match.hash-access('expr'));
         if $match.to != $test.chars {
             $output ~= " (pos={$match.to})";

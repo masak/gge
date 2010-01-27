@@ -91,6 +91,9 @@ class GGE::OPTable {
     method parse($text, *%opts) {
         my $m = GGE::Match.new(:target($text));
         my $pos = 0;
+        my $tighter = %!tokens.exists(%opts<tighter>)
+                        ?? %!tokens{%opts<tighter>}<precedence>
+                        !! '';
         my (@termstack, @tokenstack, @operstack);
         my $stoptoken = %opts<stop> // '';
         if $stoptoken.substr(0, 1) eq ' ' {
@@ -179,6 +182,12 @@ class GGE::OPTable {
                 for (%!keys{$key} // []).list -> $token {
                     next unless $expect +& $token<expect>;
                     next if $token<nows> && $nows;
+                    if $tighter
+                       && $token<precedence> ~ '=' x 100
+                          le $tighter ~ '=' x 100 {
+                        $key = '';
+                        last;
+                    }
                     my $name = $token<name>;
                     my $matchclass = %!tokens{$name}<match> ~~ GGE::Match ??
                                      %!tokens{$name}<match> !! GGE::Match;
