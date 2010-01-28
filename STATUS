@@ -5,8 +5,7 @@ PGE can).
 
 The implementation work proceeds in order of the PGE test files. The
 rx_quantifiers was the first one to be attacked, because quantifiers seemed
-like great fun. A few tests have been marked TODO in that file, pending
-re-entrant regex parsing which stops on a specified precedence level.
+like great fun.
 
 The OPTable tests were next. Only one test was marked TODO in there; it
 depends on the :parsed argument accepting a GGE::Perl6Regex object as its
