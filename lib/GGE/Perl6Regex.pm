@@ -470,6 +470,8 @@ class GGE::Perl6Regex {
         }
 
         if $key eq '**' {
+            # XXX: Should also count ws before quant modifiers -- with tests
+            my $sepws = ?($m.target.substr($m.to, 1) ~~ /\s/);
             ++$m.to while $m.target.substr($m.to, 1) ~~ /\s/;
             my $isconst = $m.target.substr($m.to, 1) ~~ /\d/;
             my $sep = !$isconst;
@@ -483,6 +485,18 @@ class GGE::Perl6Regex {
                     unless $repetition_controller;
                 my $pos = $repetition_controller.to;
                 $repetition_controller .= hash-access('expr');
+                if $sepws {
+                    my $concat = GGE::Exp::Concat.new($m);
+                    $concat.to = $pos;
+                    my $ws1 = GGE::Exp::WS.new($m);
+                    $ws1.to = $pos;
+                    $concat.push($ws1);
+                    $concat.push($repetition_controller);
+                    my $ws2 = GGE::Exp::WS.new($m);
+                    $ws2.to = $pos;
+                    $concat.push($ws2);
+                    $repetition_controller = $concat;
+                }
                 $m.hash-access('sep') = $repetition_controller;
                 $m.hash-access('min') = 1;
                 $m.hash-access('max') = Inf;
@@ -612,6 +626,9 @@ class GGE::Perl6Regex {
         my $isarray = %pad<isarray> // undef;
         %pad<isarray> = True;
         $exp[0] = perl6exp($exp[0], %pad);
+        if $exp.hash-access('sep') <-> $sep {
+            $sep = perl6exp($sep, %pad);
+        }
         %pad<isarray> = $isarray;
         $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE !! GREEDY;
         return $exp;
