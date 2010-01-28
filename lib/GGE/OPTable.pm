@@ -184,7 +184,7 @@ class GGE::OPTable {
                 for (%!keys{$key} // []).list -> $token {
                     next unless $expect +& $token<expect>;
                     next if $token<nows> && $nows;
-                    if $tighter
+                    if $circumnest == 0 && $tighter
                        && $token<precedence> ~ '=' x 100
                           le $tighter ~ '=' x 100 {
                         $key = '';

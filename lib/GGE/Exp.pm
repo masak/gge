@@ -38,6 +38,12 @@ enum CUT (
     CUT_MATCH => -3,
 );
 
+enum GGE_BACKTRACK <
+    GREEDY
+    EAGER
+    NONE
+>;
+
 class GGE::Exp is GGE::Match {
     my $group;
 
@@ -142,6 +148,7 @@ class GGE::Exp is GGE::Match {
         }
     }
 } ]]);
+        ~$code;
     }
 
     method getargs($label, $next, %hash?) {
@@ -152,7 +159,7 @@ class GGE::Exp is GGE::Match {
             %hash<M> = %hash<m> == 0   ?? '### ' !! '';
             %hash<n> = $quant.hash-access('max');
             %hash<N> = %hash<n> == Inf ?? '### ' !! '';
-            my $bt = $quant.hash-access('backtrack').name.lc;
+            my $bt = ($quant.hash-access('backtrack') // GREEDY).name.lc;
             %hash<Q> = sprintf '%s..%s (%s)', %hash<m>, %hash<n>, $bt;
         }
         return %hash;
@@ -221,12 +228,6 @@ class GGE::Exp::Literal is GGE::Exp does GGE::ShowContents {
             } ], $litlen, $literal, |%args);
     }
 }
-
-enum GGE_BACKTRACK <
-    GREEDY
-    EAGER
-    NONE
->;
 
 class GGE::Exp::Quant is GGE::Exp {
     method contents() {
