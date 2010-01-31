@@ -36,12 +36,7 @@ else { # anything else
         '';
     exit(1);
 }
-if "$rakudo_dir/perl6" ~~ :f or "$rakudo_dir/perl6.exe" ~~ :f {
-    $perl6 = "$rakudo_dir/perl6";  # the fake executable from pbc_to_exe
-}
-else {
-    $perl6 = "$parrot_dir/parrot $rakudo_dir/perl6.pbc";
-}
+$perl6 = 'perl6';
 
 say "PERL6       $perl6";
 my $perl6lib = %*ENV<PERL6LIB>
