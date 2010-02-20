@@ -84,10 +84,12 @@ class GGE::Exp is GGE::Match {
     method root-p6(:$debug) {
         my $code = CodeString.new();
         $code.unique(); # XXX: Remove this one when we do other real calls
-        $code.emit( q[[sub ($target, :$debug) {
-    my $mob = GGE::Match.new(:$target);
+        $code.emit( q[[sub ($m, :$debug) {
+    my $mob = GGE::Match.new($m);
+    my $target = $mob.target;
+    my $iscont = $mob.iscont;
     my $mfrom;
-    my $cpos = 0;
+    my $cpos = $mob.startpos;
     my $pos;
     my $rep;
     my $lastpos = $target.chars;
@@ -114,7 +116,8 @@ class GGE::Exp is GGE::Match {
             when 'try_match_cont' {
                 if $cutmark <= %0 { goto('fail_cut'); break; }
                 ++$cpos;
-                goto('try_match');
+                if $iscont { goto('try_match'); break; }
+                goto('fail_rule');
             }
             when 'fail_rule' {
                 # $cutmark = %0 # XXX: Not needed yet
@@ -722,14 +725,17 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
         my %args = self.getargs($label, $next);
         my $subname = self.hash-access('subname');
         my ($captgen, $captsave, $captback) = self.gencapture($label);
+        my $subarg = self.hash-access('arg') // ''
+                        ?? $code.escape(self.hash-access('arg'))
+                        !! '';
         $code.emit( q[[
-            when '%L' {
+            when '%L' { # grammar subrule %0
                 $captob = $captscope;
                 $captob.to = $pos;
                 unless $mob.can('%0') {
                     die "Unable to find regex '%0'";
                 }
-                $captob = $captob.%0(); ]], $subname, |%args);
+                $captob = $captob.%0(%1); ]], $subname, $subarg, |%args);
         if self.hash-access('iszerowidth') {
             my $test = self.hash-access('isnegated') ?? 'unless' !! 'if';
             $code.emit( q[[

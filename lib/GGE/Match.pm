@@ -1,5 +1,8 @@
 use v6;
 
+# XXX: See the file lib/GGE/Perl6Regex.pm for an explanation.
+class GGE::Perl6Regex {}
+
 # This is a workaround. See the postcircumfix:<{ }> comments below.
 class Store {
     has %!hash is rw;
@@ -23,6 +26,8 @@ class GGE::Match {
     has $.target;
     has $.from is rw = 0;
     has $.to is rw = 0;
+    has $.iscont = False;
+    has $.startpos = 0;
     has $!store = Store.new;
     has $!ast;
 
@@ -31,9 +36,14 @@ class GGE::Match {
         self.bless(*, |%_);
     }
 
-    multi method new(GGE::Match $match, :$pos) {
+    multi method new(Str $target) {
+        self.new(:$target, :from(0), :to(-1), :iscont(True));
+    }
+
+    multi method new(GGE::Match $match) {
         defined $match ?? self.new(:target($match.target), :from($match.from),
-                                   :to(-1))
+                                   :to(-1), :iscont(False),
+                                   :startpos($match.to))
                        !! self.new();
     }
 

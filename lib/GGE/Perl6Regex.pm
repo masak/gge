@@ -7,7 +7,12 @@ class GGE::Exp::WS is GGE::Exp::Subrule {
     method contents() { undef }
 }
 
-class GGE::Perl6Regex {
+# XXX: why 'is also'? Because we'd really like to do something like
+# &::<GGE::Perl6Regex::parse_regex> in GGE::Match::before (and after), but
+# that syntax isn't implemented yet. Thus, we do the next best thing and
+# declare the GGE::Perl6Regex class in the GGE::Match module, and re-open it
+# here.
+class GGE::Perl6Regex is also {
     has GGE::Exp $!exp;
     has Callable $!binary;
 
@@ -124,9 +129,9 @@ class GGE::Perl6Regex {
         $!binary($target, :$debug);
     }
 
-    sub parse_regex($mob, :$tighter) {
-        my $p = $optable.parse($mob, :$tighter);
-        return $p;
+    # RAKUDO: Cannot call a sub named 'regex'.
+    sub parse_regex($mob, :$tighter, :$stop) {
+        return $optable.parse($mob, :$tighter, :$stop);
     }
 
     sub parse_term($mob) {
@@ -264,7 +269,15 @@ class GGE::Perl6Regex {
         }
         my ($subname, $pos) = parse_subname($target, $mob.to);
         my $cname = $subname;
-        if $target.substr($pos, 1) eq '=' {
+        if $target.substr($pos, 1) eq ' ' {
+            $m.to = ++$pos;
+            my $arg = parse_regex($m, :stop('>'));
+            return $m unless $arg;
+            $m.hash-access('arg') = ~$arg;
+            $pos = $arg.to;
+            $m.to = -1;
+        }
+        elsif $target.substr($pos, 1) eq '=' {
             ++$pos;
             ($subname, $pos) = parse_subname($target, $pos);
         }
@@ -752,5 +765,16 @@ class GGE::Perl6Regex {
         $cexp.hash-access('cname') = $cname;
         $cexp = perl6exp($cexp, %pad);
         return $cexp;
+    }
+}
+
+class GGE::Match is also {
+    method before($pattern) {
+        my $rule = GGE::Perl6Regex.new($pattern);
+        my $mob = $rule(self);
+        if $mob { # 'before' matches are always zero-width
+            $mob.to = $mob.from;
+        }
+        return $mob;
     }
 }

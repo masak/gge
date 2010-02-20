@@ -93,6 +93,7 @@ class GGE::OPTable {
                                    !! GGE::Match.new(:target($mob), :from(0), :to(0));
         my $target = $mob ~~ GGE::Match ?? $mob.target !! $mob;
         my $pos = $mob ~~ GGE::Match ?? $mob.to !! 0;
+        $m.from = $pos;
         my $tighter = defined %opts<tighter> && %!tokens.exists(%opts<tighter>)
                         ?? %!tokens{%opts<tighter>}<precedence>
                         !! '';
