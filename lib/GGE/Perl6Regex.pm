@@ -769,7 +769,11 @@ class GGE::Perl6Regex is also {
 }
 
 class GGE::Match is also {
-    method before($pattern) {
+    multi method before() {
+        return GGE::Match.new(self); # a failure
+    }
+
+    multi method before($pattern) {
         my $rule = GGE::Perl6Regex.new($pattern);
         my $mob = $rule(self);
         if $mob { # 'before' matches are always zero-width
