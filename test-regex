@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl6
+#!/usr/bin/alpha
 use v6;
 use GGE;
 
