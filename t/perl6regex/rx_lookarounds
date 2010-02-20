@@ -19,6 +19,7 @@ $ <after ^a>		a		y				lookbehind <after>
 <[a..z]>+		az		y				metasyntax with leading + (<+...>)
 <+[a..z]>+		az		y				metasyntax with leading + (<+...>)
 <+alpha>+		az		y				metasyntax with leading + (<+...>)
+<after a|d> c	abc		n				the after pattern must be grouped
 
 <?>			''		y		null pattern (<?>)
 ^ <?>		\t\n\r !"#$%&'()*+,-./:;<=>?@[\]^`_{|}0123456789ABCDEFGHIJabcdefghij	y	null pattern (<?>)

@@ -783,7 +783,7 @@ class GGE::Match is also {
     }
 
     method after($pattern) {
-        my $rule = GGE::Perl6Regex.new($pattern ~ '$');
+        my $rule = GGE::Perl6Regex.new('[' ~ $pattern ~ ']$');
         my $mob = $rule(self.target.substr(0, self.to));
         if $mob { # 'after' matches are always zero-width
             $mob.from = $mob.to = self.to;
