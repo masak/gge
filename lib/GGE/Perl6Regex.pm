@@ -47,6 +47,10 @@ class GGE::Perl6Regex is also {
                     :nows, :match(GGE::Exp::Anchor));
     $optable.newtok('term:>>',   :equiv<term:>,
                     :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:<?>',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
+    $optable.newtok('term:<!>',  :equiv<term:>,
+                    :nows, :match(GGE::Exp::Anchor));
     $optable.newtok('term:.',    :equiv<term:>,
                     :nows, :match(GGE::Exp::CCShortcut));
     $optable.newtok('term:\\d',  :equiv<term:>,

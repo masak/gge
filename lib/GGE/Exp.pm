@@ -455,6 +455,17 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
                 }
                 goto('fail'); ], $next );
             }
+            when '<?>' {
+                $code.emit( q[
+                goto('%0'); ], $next );
+            }
+            when '<!>' {
+                $code.emit( q[
+                goto('fail'); ], $next );
+            }
+            default {
+                die "Unknown anchor: $_";
+            }
         }
         $code.emit( q[
             } ]);
