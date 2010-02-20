@@ -18,18 +18,11 @@ challenge: PGE surprisingly not slow enough? We know a number of ways to
 fix that...
 
 GGE, the Glacial Grammar Engine, is a faithful port of PGE from PIR to Perl
-6. It tries (albeit not too hard) to be implementation-independent, and it
-also attempts (though perhaps not too convincingly) to be a drop-in
-replacement for PGE. Most importantly, besides being written in Perl 6
-rather than PIR, it brings one new essential feature to the table: it's
-slower. Much slower... but still quite cool. Hence the name.
-
-The "albeit not too hard" reservation to the implementation-independence
-stems from the fact that some PIR tricks used by PGE are unavailable in
-Perl 6. When faced with a choice of (a) giving up, and (b) cheating by
-introducing some PIR-dependent workaround, the latter road will be chosen.
-That said, implementation-independence stands as a goal whenever possible,
-just as with all honest Perl 6 code.
+6. It tries to be implementation-independent, and it also attempts (though
+perhaps not too convincingly) to be a drop-in replacement for PGE. Most
+importantly, besides being written in Perl 6 rather than PIR, it brings one new
+essential feature to the table: it's slower. Much slower... but still quite
+cool. Hence the name.
 
 The "though perhaps not too convincingly" reservation to GGE attempting to
 be a drop-in replacement for PGE stems from the fact that now that regular
@@ -40,11 +33,12 @@ course, it would be a fun challenge in itself to restrict the writing of
 GGE to a strict subset of Perl 6 -- one not using any regexes at all,
 directly or indirectly -- but that is not the kind of fun optimized for in
 this case. Future teams of developers are welcome to optimize for that kind
-of fun, should they wish.
+of fun, should they wish. The instances of conscious transgressions in GGE are
+listed in docs/REGEXES_IN_GGE.
 
 For an overview of the status of the project, see STATUS. For an overview
 of the cool things that could be built with the project as a dependency,
-see COOLTHINGS.
+see docs/COOLTHINGS.
 
 == License
 

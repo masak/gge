@@ -1,0 +1,44 @@
+Regexes are a very useful construct, even in a regex engine. Since we're not
+in a position where we're building a regex engine for the first time and
+simply *can't* use regex matching, we might as well use it when it's
+convenient.
+
+* The file t/perl6regex/01-regex.t is full of regex matches. We're not
+  testing those regexes anyway, so we might as well use them fully.
+
+* The CodeString.emit method in GGE::Exp uses .subst and regexes to substitute
+  in an argument where it finds '%' followed by a digit or a letter.
+
+* The code emitted for term:<< and term:>> do some /\w/ matching.
+
+* GGE::Match.cclass uses regex matching to check whether a character belongs
+  to a particular character class or not. (Parrot already stores large
+  generated tables with this information. Rather than reproduce those tables
+  in GGE, we call down to PGE.) The methods upper, lower, alpha, digit etc
+  all delegate to the cclass method with different regexes.
+
+* The GGE::Match.ident method does matching agains /<alpha>/ and /\w/.
+
+* The GGE::Match.wb method matches against /\w/.
+
+* The GGE::Match.ws method matches against /\W/ and /\s/.
+
+* GGE::Perl6Regex.parseterm matches against /\s/ and /\w/.
+
+* GGE::Exp::p6escapes matches against /\s/.
+
+* GGE::Exp::parse_term_backslash matches against /\w/.
+
+* GGE::Exp::parse_subname matches against /\w/.
+
+* GGE::Exp::parse_enumcharclass matches against /\s/.
+
+* GGE::Exp::parse_quant matches against /\s/ and /\d/.
+
+* GGE::Exp::parse_dollar matches against /\d/.
+
+* GGE::Exp::parse_modifier matches against /\d/ and /\w+/.
+
+As is clearly evident, those character classes show up everywhere. To really
+rid GGE of all dependencies of an existing grammar engine, one would have to
+give GGE its own generated table with character class information.
