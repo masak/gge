@@ -29,9 +29,9 @@ rx_backtrack     23 DONE (one todo test remains)
 rx_modifiers    102 DONE (a few todo tests remain)
 rx_captures      48 DONE (a few todo tests remain)
 rx_subrules      60 DONE
-rx_lookarounds   33 work in progress
+rx_lookarounds   33 DONE
+rx_goal          11 work in progress
 
-rx_goal          11 to be done
 rx_syntax        33 to be done
 
 Here's a copy of PGE's STATUS, adapted for GGE:

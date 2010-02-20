@@ -94,7 +94,6 @@ foo '-'? bar			foo - bar	n	basic non-match
 :s()foo '-'? bar		foo - bar	n	basic ws match
 # todo :pge<feature>
 :s[]foo '-'? bar		foo - bar	y	basic ws match
-# todo :gge<no <?lookahead> yet>
 :s<?wb>foo '-'? bar		foo - bar	y	basic ws match with boundary modifier separation
 :s::foo '-'? bar			foo - bar	y	basic ws match with backtrack no-op modifier separation
 :s::(\w+) ':=' (\S+)		dog := spot	/mob 0: <dog @ 0>/	sigspace and capture together
