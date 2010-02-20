@@ -8,6 +8,7 @@ my $previous-rule;
 sub dirname($path) { $path.comb(/<-[/]>+ '/'/).join() } #' (vim fix)
 
 my @test-files = <
+    lookarounds
     metachars
     quantifiers
     backtrack
