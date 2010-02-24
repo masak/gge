@@ -2,13 +2,13 @@ use v6;
 use GGE::Exp;
 use GGE::OPTable;
 
-class Algebra::Literal is GGE::Exp does ShowContents {
+class Algebra::Literal is GGE::Exp does GGE::ShowContents {
     method evaluate() {
         +$.ast;
     }
 }
 
-class Algebra::BinOp is GGE::Exp does ShowContents {
+class Algebra::BinOp is GGE::Exp does GGE::ShowContents {
 }
 
 class Algebra::Addition is Algebra::BinOp {
@@ -35,10 +35,10 @@ given GGE::OPTable.new() -> $optable {
     while prompt('> ') -> $input {
         my $match = $optable.parse($input);
         if $match.to < $input.chars {
-            say 'Could not parse the arithmetic expression';
+            warn 'Could not parse the arithmetic expression';
             next;
         }
-        my $expr = $match<expr>;
+        my $expr = $match.hash-access('expr');
         say $expr.evaluate;
     }
     say '';
