@@ -66,26 +66,44 @@ class GGE::Exp is GGE::Match {
         '  ' x $indent ~ self.WHAT.perl.subst(/^.*':'/, '') ~ $contents;
     }
 
-    method compile(:$debug) {
-        my $source = self.root-p6(:$debug);
+    method compile(:$debug, :$grammar, :$name, :$target = 'routine') {
+        my $source = self.root-p6(:$debug, :$grammar, :$name);
         if $debug {
             say $source;
             say '';
         }
-        my $binary = eval $source
-            or die ~$!;
-        return $binary;
+        if $target eq 'P6' {
+            return $source;
+        }
+        else {
+            my $binary = eval $source
+                or die ~$!;
+            return $binary;
+        }
     }
 
     method reduce() {
         self;
     }
 
-    method root-p6(:$debug) {
+    method root-p6(:$debug, :$grammar, :$name = '') {
         my $code = CodeString.new();
         $code.unique(); # XXX: Remove this one when we do other real calls
-        $code.emit( q[[sub ($m, :$debug) {
-    my $mob = GGE::Match.new($m);
+        my $MATCH = 'GGE::Match';
+        if $grammar {
+            $code.emit( q[[class %0 is also { ]], $grammar );
+            $MATCH = $grammar;
+        }
+        if $name {
+            $code.emit( q[[ method %0(:$debug) {
+    my $m = self;
+            ]], $name );
+        }
+        else {
+            $code.emit( q[[ sub ($m, :$debug) { ]] );
+        }
+        $code.emit( q[[
+    my $mob = %1.new($m);
     my $target = $mob.target;
     my $iscont = $mob.iscont;
     my $mfrom;
@@ -135,7 +153,7 @@ class GGE::Exp is GGE::Match {
             }
             when 'fail' {
                 local-return();
-            } ]], CUT_RULE);
+            } ]], CUT_RULE, $MATCH);
         my $explabel = 'R';
         $GGE::Exp::group = self;
         my $exp = self.reduce;
@@ -150,7 +168,10 @@ class GGE::Exp is GGE::Match {
             }
         }
     }
-} ]]);
+} ]], $name);
+        if $grammar {
+            $code.emit( q[[ } ]] ); # close off the grammar class
+        }
         ~$code;
     }
 

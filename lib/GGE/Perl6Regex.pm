@@ -120,12 +120,12 @@ class GGE::Perl6Regex is also {
     $optable.newtok('prefix::',  :looser<infix:|>,
                     :parsed(&GGE::Perl6Regex::parse_modifier));
 
-    method new($pattern, :$debug) {
+    method new($pattern, :$grammar, :$name, :$debug) {
         my $match = parse_regex($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
         my $exp = perl6exp($match.hash-access('expr'), { lexscope => {} });
-        my $binary = $exp.compile(:$debug);
+        my $binary = $exp.compile(:$debug, :$grammar, :$name);
         return self.bless(*, :$exp, :$binary);
     }
 

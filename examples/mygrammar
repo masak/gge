@@ -1,0 +1,15 @@
+use v6;
+
+use GGE;
+
+my $debug = False;
+
+class MyGrammar is GGE::Grammar {
+    GGE::Perl6Regex.new("<bar>",    :$debug, :grammar<MyGrammar>, :name<TOP>);
+    GGE::Perl6Regex.new("'OH HAI'", :$debug, :grammar<MyGrammar>, :name<bar>);
+}
+
+my GGE::Match $match
+    = MyGrammar.parse('this string contains "OH HAI" as a substring', :$debug);
+
+say $match ?? $match.dump_str('mob', ' ', '') !! "No match\n";

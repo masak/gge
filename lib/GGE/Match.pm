@@ -27,6 +27,8 @@ class GGE::Match {
     has $.from is rw = 0;
     has $.to is rw = 0;
     has $.iscont = False;
+    # XXX: This is *so* a hack. Can't think of anything better now. Sorry.
+    has $.iscont2 = False;
     has $.startpos = 0;
     has $!store = Store.new;
     has $!ast;
@@ -37,12 +39,13 @@ class GGE::Match {
     }
 
     multi method new(Str $target) {
-        self.new(:$target, :from(0), :to(-1), :iscont(True));
+        self.new(:$target, :from(0), :to(-1), :iscont(True), :iscont2(True));
     }
 
     multi method new(GGE::Match $match) {
         defined $match ?? self.new(:target($match.target), :from($match.from),
-                                   :to(-1), :iscont(False),
+                                   :to(-1),
+                                   :iscont2(False), :iscont($match.iscont2),
                                    :startpos($match.to))
                        !! self.new();
     }
