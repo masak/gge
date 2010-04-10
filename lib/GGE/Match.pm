@@ -1,7 +1,6 @@
 use v6;
 
-# XXX: See the file lib/GGE/Perl6Regex.pm for an explanation.
-class GGE::Perl6Regex {}
+class GGE::Perl6Regex { ... }
 
 # This is a workaround. See the postcircumfix:<{ }> comments below.
 class Store {

@@ -15,16 +15,16 @@ class GGE::OPTable {
     ##constant GGE_OPTABLE_INFIX         = 0x60;
     ##constant GGE_OPTABLE_POSTCIRCUMFIX = 0x80;
     ##constant GGE_OPTABLE_CIRCUMFIX     = 0x90;
-    sub GGE_OPTABLE_EXPECT_TERM { 0x01 }
-    sub GGE_OPTABLE_EXPECT_OPER { 0x02 }
+    our sub GGE_OPTABLE_EXPECT_TERM { 0x01 }
+    our sub GGE_OPTABLE_EXPECT_OPER { 0x02 }
 
-    sub GGE_OPTABLE_TERM          { 0x10 }
-    sub GGE_OPTABLE_POSTFIX       { 0x20 }
-    sub GGE_OPTABLE_CLOSE         { 0x30 }
-    sub GGE_OPTABLE_PREFIX        { 0x40 }
-    sub GGE_OPTABLE_INFIX         { 0x60 }
-    sub GGE_OPTABLE_POSTCIRCUMFIX { 0x80 }
-    sub GGE_OPTABLE_CIRCUMFIX     { 0x90 }
+    our sub GGE_OPTABLE_TERM          { 0x10 }
+    our sub GGE_OPTABLE_POSTFIX       { 0x20 }
+    our sub GGE_OPTABLE_CLOSE         { 0x30 }
+    our sub GGE_OPTABLE_PREFIX        { 0x40 }
+    our sub GGE_OPTABLE_INFIX         { 0x60 }
+    our sub GGE_OPTABLE_POSTCIRCUMFIX { 0x80 }
+    our sub GGE_OPTABLE_CIRCUMFIX     { 0x90 }
 
     has %!tokens;
     has %!keys;
@@ -47,7 +47,7 @@ class GGE::OPTable {
                                   expect => 0x0101, arity => 1 },
     ;
 
-    method newtok($name, *%opts) {
+    method newtok($name, *%opts is copy) {
         my $category = $name.substr(0, $name.index(':') + 1);
         if %!sctable{$category} -> %defaults {
             %opts{$_} //= %defaults{$_} for %defaults.keys;

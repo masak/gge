@@ -32,17 +32,23 @@ role GGE::ShowContents {
 
 # RAKUDO: Could name this one GGE::Exp::CUT or something, if enums
 #         with '::' in them worked, which they don't. [perl #71460]
-enum CUT (
-    CUT_GROUP => -1,
-    CUT_RULE  => -2,
-    CUT_MATCH => -3,
-);
+sub CUT_GROUP { -1 }
+sub CUT_RULE  { -2 }
+sub CUT_MATCH { -3 }
+#enum CUT (
+#    CUT_GROUP => -1,
+#    CUT_RULE  => -2,
+#    CUT_MATCH => -3,
+#);
 
-enum GGE_BACKTRACK <
-    GREEDY
-    EAGER
-    NONE
->;
+sub GREEDY { 0 }
+sub EAGER  { 1 }
+sub NONE   { 2 }
+#enum GGE_BACKTRACK <
+#    GREEDY
+#    EAGER
+#    NONE
+#>;
 
 class GGE::Exp is GGE::Match {
     my $group;
@@ -252,7 +258,7 @@ class GGE::Exp::Quant is GGE::Exp {
         }
         %args<c C> = 0, '### ';
         given self.hash-access('backtrack') {
-            when EAGER {
+            when EAGER() {
                 $code.emit( q[[
             when '%L' { # quant %Q eager
                 push @gpad, 0;
@@ -283,7 +289,7 @@ class GGE::Exp::Quant is GGE::Exp {
                 goto('%1');
             } ]], $replabel, $nextlabel, |%args);
             }
-            when NONE {
+            when NONE() {
                 %args<c C> = $code.unique(), '';
                 if self.hash-access('min') != 0
                    || self.hash-access('max') != Inf {
@@ -516,7 +522,7 @@ class GGE::Exp::EnumCharList is GGE::Exp does GGE::ShowContents {
             }
         }
         my $list = self.ast;
-        qq[<$prefix\[$list\]>]
+        "<$prefix" ~ '[' ~ "$list]>";
     }
 
     method p6($code, $label, $next) {
@@ -677,7 +683,7 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
 
 class GGE::Exp::Cut is GGE::Exp {
     method reduce() {
-        if self.hash-access('cutmark') > CUT_RULE {
+        if self.hash-access('cutmark') > CUT_RULE() {
             my $group = $GGE::Exp::group;
             if !$group.hash-access('cutmark') {
                 $group.hash-access('cutmark') = CodeString.unique();

@@ -3,8 +3,10 @@ use GGE::Match;
 use GGE::Exp;
 use GGE::OPTable;
 
+use MONKEY_TYPING;
+
 class GGE::Exp::WS is GGE::Exp::Subrule {
-    method contents() { undef }
+    method contents() {}
 }
 
 # XXX: why 'is also'? Because we'd really like to do something like
@@ -12,7 +14,7 @@ class GGE::Exp::WS is GGE::Exp::Subrule {
 # that syntax isn't implemented yet. Thus, we do the next best thing and
 # declare the GGE::Perl6Regex class in the GGE::Match module, and re-open it
 # here.
-class GGE::Perl6Regex is also {
+class GGE::Perl6Regex {
     has GGE::Exp $!exp;
     has Callable $!binary;
 
@@ -613,10 +615,7 @@ class GGE::Perl6Regex is also {
         if $key eq 's' {
             $key = 'sigspace';
         }
-        # RAKUDO: Looks odd with the '// undef', doesn't it? Well, without
-        #         it, things blow up badly if we try to inspect the value
-        #         of a hash miss.
-        my $temp = %pad{$key} // undef;
+        my $temp = %pad{$key};
         %pad{$key} = $exp.ast;
         $exp[0] = perl6exp($exp[0], %pad);
         %pad{$key} = $temp;
@@ -640,14 +639,14 @@ class GGE::Perl6Regex is also {
     }
 
     multi sub perl6exp(GGE::Exp::Quant $exp is rw, %pad) {
-        my $isarray = %pad<isarray> // undef;
+        my $isarray = %pad<isarray>;
         %pad<isarray> = True;
         $exp[0] = perl6exp($exp[0], %pad);
-        if $exp.hash-access('sep') <-> $sep {
-            $sep = perl6exp($sep, %pad);
+        if $exp.hash-access('sep') -> $sep {
+            $exp.hash-access('sep') = perl6exp($sep, %pad);
         }
         %pad<isarray> = $isarray;
-        $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE !! GREEDY;
+        $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE() !! GREEDY;
         return $exp;
     }
 
@@ -713,7 +712,7 @@ class GGE::Perl6Regex is also {
 
     multi sub perl6exp(GGE::Exp::Subrule $exp is rw, %pad) {
         my $cname = $exp.hash-access('cname');
-        my $isarray = %pad<isarray> // undef;
+        my $isarray = %pad<isarray>;
         if %pad<lexscope>.exists($cname) {
             %pad<lexscope>{$cname}.hash-access('isarray') = True;
             $isarray = True;
@@ -725,8 +724,8 @@ class GGE::Perl6Regex is also {
 
     multi sub perl6exp(GGE::Exp::Cut $exp is rw, %pad) {
         $exp.hash-access('cutmark') =
-               $exp.ast eq '::'  ?? CUT_GROUP
-            !! $exp.ast eq ':::' ?? CUT_RULE
+               $exp.ast eq '::'  ?? CUT_GROUP()
+            !! $exp.ast eq ':::' ?? CUT_RULE()
             !!                      CUT_MATCH;
         return $exp;
     }
@@ -772,7 +771,7 @@ class GGE::Perl6Regex is also {
     }
 }
 
-class GGE::Match is also {
+augment class GGE::Match {
     multi method before() {
         return GGE::Match.new(self); # a failure
     }
