@@ -115,7 +115,8 @@ $optable .= new;
 for ['term:',             precedence => '=', :parsed($ident)      ],
     ['postfix:*',         looser     => 'term:'                   ],
     ['infix:',            looser     => 'postfix:*', :assoc<list> ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'x a*y', 'infix:(term:x, postfix:*(term:a), term:y)',
                    'list assoc redux' );
@@ -125,7 +126,8 @@ $optable .= new;
 for ['term:',             precedence => '=', :parsed($ident)      ],
     ['postfix:+',         looser     => 'term:'                   ],
     ['postfix:!',         equiv      => 'postfix:+'               ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'a+!', 'postfix:!(postfix:+(term:a))',
                    'precedence of two postfixes' );
@@ -135,7 +137,8 @@ $optable .= new;
 for ['term:',             precedence => '=', :parsed($ident)         ],
     ['term:^',            equiv      => 'term:'                      ],
     ['infix:',            looser     => 'term:', :assoc<list>, :nows ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( '^ abc', 'infix:(term:^(), term:abc)',
                    'whitespace and infix:' );
@@ -146,7 +149,8 @@ for ['term:',             precedence => '=', :parsed($ident)           ],
     ['infix:',            looser     => 'term:', :assoc<list>, :nows   ],
     ['infix:&',           looser     => 'infix:', :assoc<list>, :nows  ],
     ['prefix:|',          looser     => 'infix:&', :assoc<list>, :nows ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'a&|b', 'infix:&(term:a, prefix:|(term:b))',
                    'infix, prefix and precedence' );
@@ -156,7 +160,8 @@ $optable .= new;
 for ['term:',         precedence => '=', :parsed($ident)           ],
     ['infix:|',       looser     => 'term:',                       ],
     ['circumfix:[ ]', equiv      => 'term:', :nows                 ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( '[a]|b', 'infix:|(circumfix:[ ](term:a), term:b)',
                    'infix and circumfix' );
@@ -165,7 +170,8 @@ $optable .= new;
 
 for ['term:',         precedence => '=', :parsed($ident)           ],
     ['infix:',        looser     => 'term:', :assoc<list>, :nows   ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'a b', 'term:a (pos=1)', ':tighter option',
                    :tighter<infix:> );
