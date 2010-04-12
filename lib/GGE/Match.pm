@@ -46,7 +46,7 @@ class GGE::Match {
                        !! self.new();
     }
 
-    method true() {
+    method Bool() {
         return $!to >= $!from;
     }
 
