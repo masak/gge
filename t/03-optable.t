@@ -31,7 +31,8 @@ for ['infix:+',           precedence => '='                                 ],
     ['postcircumfix:( )', looser     => 'term:', :nullterm,  :nows          ],
     ['postcircumfix:[ ]', equiv      => 'postcircumfix:( )', :nows          ]#,
 #    ['term:->',           equiv      => 'term:', :!skipkey, :parsed($arrow) ]
--> @args { my ($name, %opts) = @args; $optable.newtok($name, |%opts) }
+# RAKUDO: Can't list-assign to a hash without losing keys. [perl #74302]
+-> @args { my $name = @args[0]; my %opts = @args[1..@args-1]; $optable.newtok($name, |%opts) }
 
 optable_output_is( 'a',     'term:a',                                   'Simple term' );
 optable_output_is( 'a+b',   'infix:+(term:a, term:b)',                  'Simple infix' );
