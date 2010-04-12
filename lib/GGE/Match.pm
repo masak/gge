@@ -148,7 +148,7 @@ class GGE::Match {
         $!ast // self.Str
     }
 
-    method ident() {
+    our method ident() {
         my $mob = self.new(self);
         my $target = $mob.target;
         my $pos = self.to;
