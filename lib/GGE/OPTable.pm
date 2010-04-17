@@ -92,6 +92,8 @@ class GGE::OPTable {
         my $m = $mob ~~ GGE::Match ?? GGE::Match.new($mob)
                                    !! GGE::Match.new(:target($mob), :from(0), :to(0));
         my $target = $mob ~~ GGE::Match ?? $mob.target !! $mob;
+        # RAKUDO: Stringification needed due to [perl #73462]
+        $target = ~$target;
         my $pos = $mob ~~ GGE::Match ?? $mob.to !! 0;
         $m.from = $pos;
         my $tighter = defined %opts<tighter> && %!tokens.exists(%opts<tighter>)

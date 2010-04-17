@@ -121,15 +121,15 @@ class GGE::Exp is GGE::Match {
     loop {
         given @cstack[*-1] {
             when 'try_match' {
-                if $cpos > $lastpos { goto('fail_rule'); break; }
+                if $cpos > $lastpos { goto('fail_rule'); succeed; }
                 $mfrom = $pos = $cpos;
                 $cutmark = 0;
                 local-branch('R');
             }
             when 'try_match_cont' {
-                if $cutmark <= %0 { goto('fail_cut'); break; }
+                if $cutmark <= %0 { goto('fail_cut'); succeed; }
                 ++$cpos;
-                if $iscont { goto('try_match'); break; }
+                if $iscont { goto('try_match'); succeed; }
                 goto('fail_rule');
             }
             when 'fail_rule' {
@@ -195,7 +195,7 @@ class GGE::Exp is GGE::Match {
                 $captback.emit('%0.pop();', $indexing);
                 $captgen.emit( q[[if defined %0 {
                     goto('%1_cgen');
-                    break;
+                    succeed;
                 }
                 %0 = [];
                 local-branch('%1_cgen');
@@ -237,7 +237,7 @@ class GGE::Exp::Literal is GGE::Exp does GGE::ShowContents {
                 if $pos + %0 > $lastpos
                    || $target.substr($pos, %0)%I ne %1 {
                     goto('fail');
-                    break;
+                    succeed;
                 }
                 $pos += %0;
                 goto('%S');
@@ -277,7 +277,7 @@ class GGE::Exp::Quant is GGE::Exp {
             }
             when '%0' {
                 $rep = @gpad[*-1];
-                %Mif $rep < %m { goto('%L_1'); break; }
+                %Mif $rep < %m { goto('%L_1'); succeed; }
                 pop @gpad;
                 push @ustack, $pos;
                 push @ustack, $rep;
@@ -290,7 +290,7 @@ class GGE::Exp::Quant is GGE::Exp {
                 goto('%L_1');
             }
             when '%L_1' {
-                %Nif $rep >= %n { goto('fail'); break; }
+                %Nif $rep >= %n { goto('fail'); succeed; }
                 ++$rep;
                 @gpad[*-1] = $rep;
                 goto('%1');
@@ -307,7 +307,7 @@ class GGE::Exp::Quant is GGE::Exp {
                 local-branch('%0');
             }
             when '%L_cont' {
-                if $cutmark != %c { goto('fail'); break; }
+                if $cutmark != %c { goto('fail'); succeed; }
                 $cutmark = 0;
                 goto('fail');
             }
@@ -317,11 +317,11 @@ class GGE::Exp::Quant is GGE::Exp {
             }
             when '%0_cont' {
                 $pos = pop @ustack;
-                if $cutmark != 0 { goto('fail'); break; }
+                if $cutmark != 0 { goto('fail'); succeed; }
                 local-branch('%S');
             }
             when '%0_cont_cont' {
-                if $cutmark != 0 { goto('fail'); break; }
+                if $cutmark != 0 { goto('fail'); succeed; }
                 $cutmark = %c;
                 goto('fail');
             } ]], $replabel, $nextlabel, |%args);
@@ -334,13 +334,13 @@ class GGE::Exp::Quant is GGE::Exp {
             }
             when '%L_cont' {
                 pop @gpad;
-                %Cif $cutmark != %c { goto('fail'); break; }
+                %Cif $cutmark != %c { goto('fail'); succeed; }
                 %C$cutmark = 0;
                 goto('fail');
             }
             when '%0' {
                 $rep = @gpad[*-1];
-                %Nif $rep >= %n { goto('%L_1'); break; }
+                %Nif $rep >= %n { goto('%L_1'); succeed; }
                 ++$rep;
                 @gpad[*-1] = $rep;
                 push @ustack, $pos;
@@ -350,12 +350,12 @@ class GGE::Exp::Quant is GGE::Exp {
             when '%0_cont' {
                 $rep = pop @ustack;
                 $pos = pop @ustack;
-                if $cutmark != 0 { goto('fail'); break; }
+                if $cutmark != 0 { goto('fail'); succeed; }
                 --$rep;
                 goto('%L_1');
             }
             when '%L_1' {
-                %Mif $rep < %m { goto('fail'); break; }
+                %Mif $rep < %m { goto('fail'); succeed; }
                 pop @gpad;
                 push @ustack, $rep;
                 local-branch('%S');
@@ -363,7 +363,7 @@ class GGE::Exp::Quant is GGE::Exp {
             when '%L_1_cont' {
                 $rep = pop @ustack;
                 push @gpad, $rep;
-                if $cutmark != 0 { goto('fail'); break; }
+                if $cutmark != 0 { goto('fail'); succeed; }
                 %C$cutmark = %c;
                 goto('fail');
             } ]], $replabel, $nextlabel, |%args);
@@ -372,7 +372,7 @@ class GGE::Exp::Quant is GGE::Exp {
         if self.hash-access('sep') -> $sep {
             $code.emit( q[[
             when '%0' {
-                if $rep == 1 { goto('%1'); break; }
+                if $rep == 1 { goto('%1'); succeed; }
                 goto('%2');
             } ]], $nextlabel, $explabel, $seplabel);
             $sep.p6($code, $seplabel, $explabel);
@@ -390,7 +390,7 @@ class GGE::Exp::CCShortcut is GGE::Exp does GGE::ShowContents {
             when '%0' { # ccshortcut %1
                 if $pos >= $lastpos || %2 {
                     goto('fail');
-                    break;
+                    succeed;
                 }
                 ++$pos;
                 goto('%3');
@@ -404,7 +404,7 @@ class GGE::Exp::Newline is GGE::Exp does GGE::ShowContents {
             when '%0' { # newline
                 unless $target.substr($pos, 1) eq "\n"|"\r" {
                     goto('fail');
-                    break;
+                    succeed;
                 }
                 my $twochars = $target.substr($pos, 2);
                 ++$pos;
@@ -423,12 +423,12 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
         given self.ast {
             when '^' {
                 $code.emit( q[
-                if $pos == 0 { goto('%0'); break; }
+                if $pos == 0 { goto('%0'); succeed; }
                 goto('fail'); ], $next );
             }
             when '$' {
                 $code.emit( q[
-                if $pos == $lastpos { goto('%0'); break; }
+                if $pos == $lastpos { goto('%0'); succeed; }
                 goto('fail'); ], $next );
             }
             when '<<' {
@@ -436,7 +436,7 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
                 if $target.substr($pos, 1) ~~ /\w/
                    && ($pos == 0 || $target.substr($pos - 1, 1) !~~ /\w/) {
                     goto('%0');
-                    break;
+                    succeed;
                 }
                 goto('fail'); ], $next );
             }
@@ -445,7 +445,7 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
                 if $pos > 0 && $target.substr($pos - 1, 1) ~~ /\w/
                    && ($pos == $lastpos || $target.substr($pos, 1) !~~ /\w/) {
                     goto('%0');
-                    break;
+                    succeed;
                 }
                 goto('fail'); ], $next );
             }
@@ -454,7 +454,7 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
                 if $pos == 0 || $pos < $lastpos
                                 && $target.substr($pos - 1, 1) eq "\n" {
                     goto('%0');
-                    break;
+                    succeed;
                 }
                 goto('fail'); ], $next );
             }
@@ -464,7 +464,7 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
                    || $pos == $lastpos
                       && ($pos < 1 || $target.substr($pos - 1, 1) ne "\n") {
                     goto('%0');
-                    break;
+                    succeed;
                 }
                 goto('fail'); ], $next );
             }
@@ -540,7 +540,7 @@ class GGE::Exp::EnumCharList is GGE::Exp does GGE::ShowContents {
                 if $pos >= $lastpos
                    || %1 %2.index($target.substr($pos, 1)) {
                     goto('fail');
-                    break;
+                    succeed;
                 }
                 ++$pos;
                 goto('%3');
@@ -565,7 +565,7 @@ class GGE::Exp::Alt is GGE::Exp {
             }
             when '%0_cont' {
                 $pos = pop @ustack;
-                if $cutmark != 0 { goto('fail'); break; }
+                if $cutmark != 0 { goto('fail'); succeed; }
                 goto('%2');
             } ], $label, $exp0label, $exp1label);
         self[0].p6($code, $exp0label, $next);
@@ -603,7 +603,7 @@ class GGE::Exp::Conj is GGE::Exp {
             when '%4' {
                 if $pos != @gpad[*-1] {
                     goto('fail');
-                    break;
+                    succeed;
                 }
                 my $p1 = pop @gpad;
                 my $p2 = pop @gpad;
@@ -663,7 +663,7 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
             when '%L_1_cont' {
                 $captob = pop @gpad;
                 $captscope = pop @gpad;
-                %Cif $cutmark != %c { goto('fail'); break; }
+                %Cif $cutmark != %c { goto('fail'); succeed; }
                 %C$cutmark = 0;
                 goto('fail');
             }
@@ -729,7 +729,7 @@ class GGE::Exp::Scalar is GGE::Exp does GGE::ShowContents {
                 if $pos + $length > $lastpos
                    || $target.substr($pos, $length) ne $capture {
                     goto('fail');
-                    break;
+                    succeed;
                 }
                 $pos += $length;
                 goto('%1');
@@ -764,7 +764,7 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
             my $test = self.hash-access('isnegated') ?? 'unless' !! 'if';
             $code.emit( q[[
                 # XXX: fail match
-                %1 $captob.to < 0 { goto('fail'); break; }
+                %1 $captob.to < 0 { goto('fail'); succeed; }
                 $captob.from = $captob.to = $pos;
                 goto('%2');
             } ]], "XXX: fail match", $test, $next);
@@ -772,7 +772,7 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
         else {
             $code.emit( q[[
                 # XXX: fail match
-                if $captob.to < 0 { goto('fail'); break; }
+                if $captob.to < 0 { goto('fail'); succeed; }
                 %2
                 %3
                 $captob.from = $pos; # XXX: No corresponding line in PGE
