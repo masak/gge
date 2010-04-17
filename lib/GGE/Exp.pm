@@ -5,10 +5,17 @@ class CodeString {
     has Str $!contents = '';
     my $counter = 0;
 
-    method emit($string, *@args, *%kwargs) {
-        $!contents ~= $string\
-                        .subst(/\%(\d)/, {   @args[$0] // '...' }, :g)\
-                        .subst(/\%(\w)/, { %kwargs{$0} // '...' }, :g);
+    method emit($string is copy, *@args, *%kwargs) {
+        while index($string, '%') -> $pos {
+            my $new;
+            given substr($string, $pos + 1, 1) {
+                when /\d/ { $new = @args[$_.Int] // '...' }
+                when /\w/ { $new = %kwargs{$_} // '...' }
+                default   { die "Illegal subststr %" ~ $_ }
+            }
+            $string = $string.substr(0, $pos) ~ $new ~ $string.substr($pos + 2)
+        }
+        $!contents ~= $string;
     }
 
     method escape($string) {
@@ -51,7 +58,7 @@ sub NONE   { 2 }
 #>;
 
 class GGE::Exp is GGE::Match {
-    my $group;
+    our $group;
 
     method structure($indent = 0) {
         # RAKUDO: The below was originally written as a map, but there's

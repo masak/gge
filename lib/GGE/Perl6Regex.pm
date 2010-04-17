@@ -131,7 +131,10 @@ class GGE::Perl6Regex {
         return self.bless(*, :$exp, :$binary);
     }
 
-    method postcircumfix:<( )>($target, :$debug) {
+    # Why the double parens in the parameter list? Apparently, the
+    # postcircumfix:<( )> method gets called with a Capture, so we have to
+    # unpack that.
+    method postcircumfix:<( )>( ($target, :$debug) ) {
         $!binary($target, :$debug);
     }
 

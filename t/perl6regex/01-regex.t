@@ -30,12 +30,12 @@ for @test-files -> $test-file {
         }
         next if $line ~~ /^ \#/;
         $i++;
-        $line ~~ /^ (<-[\t]>*) \t+ (<-[\t]>+) \t+ (<-[\t]>+) \t+ (.*) $/
+        $line ~~ /^ (\T*) \t+ (\T+) \t+ (\T+) \t+ (.*) $/
             or die "Unrecognized line format: $line";
         my ($pattern, $target, $result, $description) = $0, $1, $2, $3;
-        $target  = $target eq q[''] ?? '' !! backslash_escape($target);
-        $result  = backslash_escape($result);
-        my $full-description = "[$test-file:$i] $description";
+        $target  = $target eq q[''] ?? '' !! backslash_escape(~$target);
+        $result  = backslash_escape(~$result);
+        my $full-description = "[$test-file" ~ ":$i] $description";
         my $match;
         my $failed = 1; # RAKUDO: Manual CATCH workaround
         try {
@@ -75,8 +75,10 @@ sub match_perl6regex($pattern, $target) {
 }
 
 sub backslash_escape($string) {
-    return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
-                         ["\n", "\r", "\e", "\t", "\f"])\
+    # RAKUDO: No .trans again yet
+    #return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
+    #                     ["\n", "\r", "\e", "\t", "\f"])\
+    return $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\e", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g)\
                   .subst(/'\\x' (<[0..9a..f]>**{2..4})/, { chr(:16($0)) }, :g);
 }
 

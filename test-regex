@@ -13,7 +13,9 @@ my GGE::Match $match
 say $match ?? $match.dump_str('mob', ' ', '') !! "No match\n";
 
 sub backslash_escape($string) {
-    return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
-                         ["\n", "\r", "\e", "\t", "\f"])\
-                  .subst(/'\\x' (<[0..9a..f]>**{4})/, { chr(:16($0)) }, :g);
+    # RAKUDO: No .trans again yet
+    #return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
+    #                     ["\n", "\r", "\e", "\t", "\f"])\
+    return $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\e", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g)\
+                  .subst(/'\\x' (<[0..9a..f]>**{2..4})/, { chr(:16($0)) }, :g);
 }
