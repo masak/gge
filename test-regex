@@ -14,9 +14,9 @@ say $match ?? $match.dump_str('mob', ' ', '') !! "No match\n";
 
 sub replace_x($s is copy) {
     while defined (my $start = $s.index("\\x")) {
-        my $end = $start + 1;
+        my $end = $start + 2;
         ++$end while $s.substr($end, 1) ~~ /<[0..9a..fA..F]>/;
-        my $n = $s.substr($start + 1, $end - $start - 1);
+        my $n = $s.substr($start + 2, $end - $start - 2);
         $s = $s.substr(0, $start) ~ chr(:16($n)) ~ $s.substr($end);
     }
     $s
