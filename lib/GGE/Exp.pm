@@ -19,7 +19,7 @@ class CodeString {
     }
 
     method escape($string) {
-        q['] ~ $string.trans( [ q['], q[\\] ] => [ q[\\'], q[\\\\] ] ) ~ q['];
+        q['] ~ $string.subst("\\", "\\\\").subst("'", "\\'") ~ q['];
     }
 
     method unique($prefix = '') {
@@ -39,18 +39,18 @@ role GGE::ShowContents {
 
 # RAKUDO: Could name this one GGE::Exp::CUT or something, if enums
 #         with '::' in them worked, which they don't. [perl #71460]
-sub CUT_GROUP { -1 }
-sub CUT_RULE  { -2 }
-sub CUT_MATCH { -3 }
+our sub CUT_GROUP { -1 }
+our sub CUT_RULE  { -2 }
+our sub CUT_MATCH { -3 }
 #enum CUT (
 #    CUT_GROUP => -1,
 #    CUT_RULE  => -2,
 #    CUT_MATCH => -3,
 #);
 
-sub GREEDY { 0 }
-sub EAGER  { 1 }
-sub NONE   { 2 }
+our sub GREEDY { 0 }
+our sub EAGER  { 1 }
+our sub NONE   { 2 }
 #enum GGE_BACKTRACK <
 #    GREEDY
 #    EAGER
@@ -167,15 +167,21 @@ class GGE::Exp is GGE::Match {
         ~$code;
     }
 
-    method getargs($label, $next, %hash?) {
-        %hash<L S> = $label, $next;
+    # RAKUDO: [perl #74454]
+    method getargs($label, $next, %hash is copy) {
+        # RAKUDO: Still waiting for hash slices to be brought back
+        # %hash<L S> = $label, $next;
+        %hash<L> = $label;
+        %hash<S> = $next;
         if %hash.exists('quant') {
             my $quant = %hash<quant>;
             %hash<m> = $quant.hash-access('min');
             %hash<M> = %hash<m> == 0   ?? '### ' !! '';
             %hash<n> = $quant.hash-access('max');
             %hash<N> = %hash<n> == Inf ?? '### ' !! '';
-            my $bt = ($quant.hash-access('backtrack') // GREEDY).name.lc;
+            # RAKUDO: Waiting for named enums for this one
+            # my $bt = ($quant.hash-access('backtrack') // GREEDY).name.lc;
+            my $bt = 'no idea';
             %hash<Q> = sprintf '%s..%s (%s)', %hash<m>, %hash<n>, $bt;
         }
         return %hash;
@@ -223,7 +229,8 @@ class GGE::Exp is GGE::Match {
 
 class GGE::Exp::Literal is GGE::Exp does GGE::ShowContents {
     method p6($code, $label, $next) {
-        my %args = self.getargs($label, $next);
+        # RAKUDO: [perl #74454]
+        my %args = self.getargs($label, $next, {});
         my $literal = self.ast;
         my $litlen = $literal.chars;
         %args<I> = '';
@@ -250,7 +257,9 @@ class GGE::Exp::Quant is GGE::Exp {
         my ($min, $max, $bt) = map { self.hash-access($_) },
                                    <min max backtrack>;
         $bt //= GREEDY;
-        "{$bt.name.lc} $min..$max"
+        # RAKUDO: Named enums
+        # "{$bt.name.lc} $min..$max"
+        "no idea $min..$max"
     }
 
     method p6($code, $label, $next) {
@@ -263,7 +272,10 @@ class GGE::Exp::Quant is GGE::Exp {
             $seplabel = $code.unique('R');
             $nextlabel = $label ~ '_sep';
         }
-        %args<c C> = 0, '### ';
+        # RAKUDO: Hash slices not implemented yet
+        # %args<c C> = 0, '### ';
+        %args<c> = 0;
+        %args<C> = '### ';
         given self.hash-access('backtrack') {
             when EAGER() {
                 $code.emit( q[[
@@ -643,7 +655,8 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
     method p6($code, $label, $next) {
         my $explabel = $code.unique('R');
         my $expnext = $label ~ '_close';
-        my %args = self.getargs($label, $next);
+        # RAKUDO: [perl #74454]
+        my %args = self.getargs($label, $next, {});
         my ($captgen, $captsave, $captback) = self.gencapture($label);
         %args<c C> = self.hash-access('cutmark'), '### ';
         %args<X> = self.hash-access('isscope') ?? '' !! '### ';
@@ -746,7 +759,8 @@ class GGE::Exp::Alias is GGE::Exp {
 
 class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
     method p6($code, $label, $next) {
-        my %args = self.getargs($label, $next);
+        # RAKUDO: [perl #74454]
+        my %args = self.getargs($label, $next, {});
         my $subname = self.hash-access('subname');
         my ($captgen, $captsave, $captback) = self.gencapture($label);
         my $subarg = self.hash-access('arg') // ''

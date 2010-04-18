@@ -98,7 +98,8 @@ class GGE::Match {
     }
 
     method Str() {
-        $!target.substr($!from, $!to - $!from)
+        # RAKUDO: Stringification needed due to [perl #73462]
+        (~$!target).substr($!from, $!to - $!from)
     }
 
     # RAKUDO: There's a bug preventing me from using hash lookup in a

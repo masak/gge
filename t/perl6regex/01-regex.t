@@ -74,12 +74,21 @@ sub match_perl6regex($pattern, $target) {
     return $rule($target);
 }
 
+sub replace_x($s is copy) {
+    while defined (my $start = $s.index("\\x")) {
+        my $end = $start + 1;
+        ++$end while $s.substr($end, 1) ~~ /<[0..9a..fA..F]>/;
+        my $n = $s.substr($start + 1, $end - $start - 1);
+        $s = $s.substr(0, $start) ~ chr(:16($n)) ~ $s.substr($end);
+    };
+    $s
+}
+
 sub backslash_escape($string) {
     # RAKUDO: No .trans again yet
     #return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
     #                     ["\n", "\r", "\e", "\t", "\f"])\
-    return $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\e", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g)\
-                  .subst(/'\\x' (<[0..9a..f]>**{2..4})/, { chr(:16($0)) }, :g);
+    return replace_x $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\e", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g);
 }
 
 done_testing;

@@ -143,13 +143,15 @@ class GGE::Perl6Regex {
         return $optable.parse($mob, :$tighter, :$stop);
     }
 
-    sub parse_term($mob) {
-        if $mob.target.substr($mob.to, 1) ~~ /\s/ {
+    our sub parse_term($mob) {
+        # RAKUDO: Stringification needed due to [perl #73462]
+        if (~$mob.target).substr($mob.to, 1) ~~ /\s/ {
             return parse_term_ws($mob);
         }
         my $m = GGE::Exp::Literal.new($mob);
         my $pos = $mob.to;
-        my $target = $m.target;
+        # RAKUDO: Stringification needed due to [perl #73462]
+        my $target = ~$m.target;
         while $target.substr($pos, 1) ~~ /\w/ {
             ++$pos;
         }
@@ -163,15 +165,16 @@ class GGE::Perl6Regex {
         $m;
     }
 
-    sub parse_term_ws($mob) {
+    our sub parse_term_ws($mob) {
         my $m = GGE::Exp::WS.new($mob);
         $m.to = $mob.to;
-        $m.to++ while $m.target.substr($m.to, 1) ~~ /\s/;
-        if $m.target.substr($m.to, 1) eq '#' {
+        # RAKUDO: Stringification needed due to [perl #73462]
+        $m.to++ while (~$m.target).substr($m.to, 1) ~~ /\s/;
+        if (~$m.target).substr($m.to, 1) eq '#' {
             my $delim = "\n";
-            $m.to = defined $m.target.index($delim, $m.to)
-                    ?? $m.target.index($delim, $m.to) + 1
-                    !! $m.target.chars;
+            $m.to = defined (~$m.target).index($delim, $m.to)
+                    ?? (~$m.target).index($delim, $m.to) + 1
+                    !! (~$m.target).chars;
         }
         $m;
     }
@@ -220,7 +223,7 @@ class GGE::Perl6Regex {
         $m;
     }
 
-    sub parse_term_backslash($mob) {
+    our sub parse_term_backslash($mob) {
         my $backchar = substr($mob.target, $mob.to, 1);
         my $isnegated = $backchar eq $backchar.uc;
         $backchar .= lc;
@@ -255,7 +258,7 @@ class GGE::Perl6Regex {
         return $m;
     }
 
-    sub parse_subname($target, $pos is copy) {
+    our sub parse_subname($target, $pos is copy) {
         my $targetlen = $target.chars;
         my $startpos = $pos;
         while $pos < $targetlen && $target.substr($pos, 1) ~~ /\w/ {
@@ -266,7 +269,7 @@ class GGE::Perl6Regex {
         return ($subname, $pos);
     }
 
-    sub parse_subrule($mob) {
+    our sub parse_subrule($mob) {
         my $m = GGE::Exp::Subrule.new($mob);
         my $target = $mob.target;
         my $key = $mob.hash-access('KEY');
@@ -300,9 +303,9 @@ class GGE::Perl6Regex {
         return $m;
     }
 
-    sub parse_enumcharclass($mob) {
+    our sub parse_enumcharclass($mob) {
         my $m;
-        my $target = $mob.target;
+        my $target = ~$mob.target;
         my $pos = $mob.to;
         my $op = $mob.hash-access('KEY');
         if $op.substr(-1) eq '[' {
@@ -421,7 +424,7 @@ class GGE::Perl6Regex {
         return $m;
     }
 
-    sub parse_quoted_literal($mob) {
+    our sub parse_quoted_literal($mob) {
         my $m = GGE::Exp::Literal.new($mob);
 
         my $target = $m.target;
@@ -442,12 +445,13 @@ class GGE::Perl6Regex {
         $m;
     }
 
-    sub parse_quant($mob) {
+    our sub parse_quant($mob) {
         my $m = GGE::Exp::Quant.new($mob);
 
         my $key = $mob.hash-access('KEY');
         my ($mod2, $mod1);
-        given $m.target {
+        # RAKUDO: Stringification needed due to [perl #73462]
+        given ~$m.target {
             $mod2   = .substr($mob.to, 2);
             $mod1   = .substr($mob.to, 1);
         }
@@ -493,11 +497,12 @@ class GGE::Perl6Regex {
 
         if $key eq '**' {
             # XXX: Should also count ws before quant modifiers -- with tests
-            my $sepws = ?($m.target.substr($m.to, 1) ~~ /\s/);
-            ++$m.to while $m.target.substr($m.to, 1) ~~ /\s/;
-            my $isconst = $m.target.substr($m.to, 1) ~~ /\d/;
+            # RAKUDO: Stringification needed due to [perl #73462]
+            my $sepws = ?((~$m.target).substr($m.to, 1) ~~ /\s/);
+            ++$m.to while (~$m.target).substr($m.to, 1) ~~ /\s/;
+            my $isconst = (~$m.target).substr($m.to, 1) ~~ /\d/;
             my $sep = !$isconst;
-            if $m.target.substr($m.to, 1) eq '{' {
+            if (~$m.target).substr($m.to, 1) eq '{' {
                 $sep = False;
                 ++$m.to;
             }
@@ -528,11 +533,12 @@ class GGE::Perl6Regex {
                 # XXX: Add test against non-digits inside braces .**{x..z}
                 # XXX: Need to generalize this into parsing several digits
                 $m.hash-access('min') = $m.hash-access('max')
-                                      = $m.target.substr($m.to, 1);
+                # RAKUDO: Stringification needed due to [perl #73462]
+                                      = (~$m.target).substr($m.to, 1);
                 ++$m.to;
-                if $m.target.substr($m.to, 2) eq '..' {
+                if (~$m.target).substr($m.to, 2) eq '..' {
                     $m.to += 2;
-                    $m.hash-access('max') = $m.target.substr($m.to, 1);
+                    $m.hash-access('max') = (~$m.target).substr($m.to, 1);
                     if $m.hash-access('max') eq '*' {
                         $m.hash-access('max') = 'Inf';
                     }
@@ -540,7 +546,7 @@ class GGE::Perl6Regex {
                 }
                 if !$isconst {
                     die 'No "}" found'
-                        unless $m.target.substr($m.to, 1) eq '}';
+                        unless (~$m.target).substr($m.to, 1) eq '}';
                     ++$m.to
                 }
             }
@@ -549,9 +555,9 @@ class GGE::Perl6Regex {
         $m;
     }
 
-    sub parse_dollar($mob) {
+    our sub parse_dollar($mob) {
         my $pos = $mob.to;
-        my $target = $mob.target;
+        my $target = ~$mob.target;
         if $target.substr($pos, 1) eq '<' {
             my $closing-pos = $target.index('>', $pos);
             die "perl6regex parse error: Missing close '>' in scalar"
@@ -576,7 +582,7 @@ class GGE::Perl6Regex {
         return $m;
     }
 
-    sub parse_modifier($mob) {
+    our sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
         my $target = $m.target;
         my $pos = $mob.to;
@@ -631,7 +637,9 @@ class GGE::Perl6Regex {
         $exp.clear;
         for @old-children -> $old-child {
             my $new-child = perl6exp($old-child, %pad);
-            if defined $new-child {
+            # RAKUDO: Storing the result into a variable causes it to become
+            #         defined.
+            if defined perl6exp($old-child, %pad) {
                 $exp.push($new-child);
             }
         }
@@ -745,7 +753,7 @@ class GGE::Perl6Regex {
             return $exp;
         }
         else {
-            return ();
+            return Nil;
         }
     }
 
