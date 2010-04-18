@@ -309,10 +309,13 @@ class GGE::Exp::Quant is GGE::Exp {
             } ]], $replabel, $nextlabel, |%args);
             }
             when NONE() {
-                %args<c C> = $code.unique(), '';
+                # RAKUDO: Hash slices not implemented yet
+                # %args<c C> = $code.unique(), '';
+                %args<c> = $code.unique();
+                %args<C> = '';
                 if self.hash-access('min') != 0
                    || self.hash-access('max') != Inf {
-                    continue;
+                    proceed;
                 }
                 $code.emit( q[[
             when '%L' { # quant 0..Inf none
@@ -658,7 +661,10 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
         # RAKUDO: [perl #74454]
         my %args = self.getargs($label, $next, {});
         my ($captgen, $captsave, $captback) = self.gencapture($label);
-        %args<c C> = self.hash-access('cutmark'), '### ';
+        # RAKUDO: Hash slices not implemented yet
+        # %args<c C> = self.hash-access('cutmark'), '### ';
+        %args<c> = self.hash-access('cutmark');
+        %args<C> = '### ';
         %args<X> = self.hash-access('isscope') ?? '' !! '### ';
         $code.emit( q[[
             when '%L' { # capture

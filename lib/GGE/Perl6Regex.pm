@@ -181,7 +181,7 @@ class GGE::Perl6Regex {
 
     sub p6escapes($mob, :$pos! is copy) {
         my $m = GGE::Match.new($mob);
-        my $target = $m.target;
+        my $target = ~$m.target;
         my $backchar = $target.substr($pos + 1, 1);
         $pos += 2;
         my $isbracketed = $target.substr($pos, 1) eq '[';
@@ -427,7 +427,7 @@ class GGE::Perl6Regex {
     our sub parse_quoted_literal($mob) {
         my $m = GGE::Exp::Literal.new($mob);
 
-        my $target = $m.target;
+        my $target = ~$m.target;
         my $lit = '';
         my $pos = $mob.to;
         until (my $char = $target.substr($pos, 1)) eq q['] {
@@ -584,7 +584,7 @@ class GGE::Perl6Regex {
 
     our sub parse_modifier($mob) {
         my $m = GGE::Exp::Modifier.new($mob);
-        my $target = $m.target;
+        my $target = ~$m.target;
         my $pos = $mob.to;
         my $value = 1;
         my $end-of-num-pos = $pos;
