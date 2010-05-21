@@ -112,7 +112,8 @@ class GGE::OPTable {
             $pos = $oper.to;
             $expect = $token<expect> +> 8;
         };
-        my &reduce = {
+        # RAKUDO: Need to manually clone the closure [perl #73034]
+        my &reduce = pir::clone({
             my $top = pop @tokenstack;
             my $oper = pop @operstack;
             my $reduce = True;
@@ -161,7 +162,7 @@ class GGE::OPTable {
                     $pos = -1;
                 }
             }
-        };
+        });
         while $pos < $target.chars {
             my $stop_matching = False;
             if $stoptoken
