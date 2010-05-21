@@ -26,7 +26,7 @@ class GGE::Perl6Regex {
     my %esclist =
         'h' => $h-whitespace,
         'v' => $v-whitespace,
-        'e' => "\e",
+        'e' => "\c[27]", # RAKUDO: No "\e". [RT #75244]
         'f' => "\f",
         'r' => "\r",
         't' => "\t",

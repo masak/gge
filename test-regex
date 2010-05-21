@@ -26,5 +26,6 @@ sub backslash_escape($string) {
     # RAKUDO: No .trans again yet
     #return $string.trans(['\n', '\r', '\e', '\t', '\f'] =>
     #                     ["\n", "\r", "\e", "\t", "\f"])\
-    return replace_x $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\e", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g);
+    # RAKUDO: No \e. [RT #75244]
+    return replace_x $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\c[27]", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g);
 }
