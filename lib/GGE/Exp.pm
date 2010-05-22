@@ -6,7 +6,7 @@ class CodeString {
     my $counter = 0;
 
     method emit($string is copy, *@args, *%kwargs) {
-        while index($string, '%') -> $pos {
+        while defined(my $pos = index($string, '%')) {
             my $new;
             given substr($string, $pos + 1, 1) {
                 when /\d/ { $new = @args[$_.Int] // '...' }
