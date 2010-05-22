@@ -207,7 +207,7 @@ class GGE::Exp is GGE::Match {
                 local-branch('%1_cgen');
             }
             when '%1_cont' {
-                %0 = undef;
+                %0 = Mu;
                 goto('fail');
             }
             when '%1_cgen' { ]], $indexing, $label);
@@ -218,7 +218,7 @@ class GGE::Exp is GGE::Match {
                     $captback.emit('$captscope.delete(%0);', $cname);
                 }
                 else {
-                    $captback.emit('%0 = undef;', $indexing);
+                    $captback.emit('%0 = Mu;', $indexing);
                 }
             }
         }
