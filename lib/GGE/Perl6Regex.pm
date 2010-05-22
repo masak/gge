@@ -637,9 +637,9 @@ class GGE::Perl6Regex {
         $exp.clear;
         for @old-children -> $old-child {
             my $new-child = perl6exp($old-child, %pad);
-            # RAKUDO: Storing the result into a variable causes it to become
-            #         defined.
-            if defined perl6exp($old-child, %pad) {
+            # XXX: Should really be testing definedness, like PGE. Not sure
+            #      that it matters, though.
+            if $new-child {
                 $exp.push($new-child);
             }
         }
