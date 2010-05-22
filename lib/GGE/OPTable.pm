@@ -106,12 +106,12 @@ class GGE::OPTable {
         }
         my $circumnest = 0;
         my $expect = GGE_OPTABLE_EXPECT_TERM;
-        my &shift_oper = -> $oper, $token {
+        my &shift_oper = pir::clone(-> $oper, $token {
             push @tokenstack, $token;
             push @operstack, $oper;
             $pos = $oper.to;
             $expect = $token<expect> +> 8;
-        };
+        });
         # RAKUDO: Need to manually clone the closure [perl #73034]
         my &reduce = pir::clone({
             my $top = pop @tokenstack;
