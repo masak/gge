@@ -328,7 +328,7 @@ class GGE::Perl6Regex {
                             last;
                         }
                         when '.' {
-                            continue if $target.substr($pos, 2) ne '..';
+                            proceed if $target.substr($pos, 2) ne '..';
                             $pos += 2;
                             ++$pos while $target.substr($pos, 1) ~~ /\s/;
                             $isrange = True;
@@ -341,7 +341,7 @@ class GGE::Perl6Regex {
                         when '\\' {
                             ++$pos;
                             $char = $target.substr($pos, 1);
-                            continue;
+                            proceed;
                         }
                         when /\s/ {
                             ++$pos;
