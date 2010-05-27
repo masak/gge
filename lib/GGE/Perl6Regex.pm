@@ -271,7 +271,8 @@ class GGE::Perl6Regex {
 
     our sub parse_subrule($mob) {
         my $m = GGE::Exp::Subrule.new($mob);
-        my $target = $mob.target;
+        # RAKUDO: Regex::Match doesn't support .substr
+        my $target = ~$mob.target;
         my $key = $mob.hash-access('KEY');
         if $key eq '<!' {
             $m.hash-access('isnegated') = True;
