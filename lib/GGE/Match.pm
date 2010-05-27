@@ -63,7 +63,7 @@ class GGE::Match {
                     when GGE::Match {
                         $out ~= $elem.dump_str($name, $b1, $b2);
                     }
-                    when List {
+                    when Array {
                         for $elem.list.kv -> $i2, $e2 {
                             my $n2 = [~] $name, $b1, $i2, $b2;
                             $out ~= $e2.dump_str($n2, $b1, $b2);
@@ -83,7 +83,7 @@ class GGE::Match {
                 when GGE::Match {
                     $out ~= $elem.dump_str($name, $b1, $b2);
                 }
-                when List {
+                when Array {
                     for $elem.list.kv -> $i2, $e2 {
                         my $n2 = [~] $name, $b1, $i2, $b2;
                         $out ~= $e2.dump_str($n2, $b1, $b2);
