@@ -21,7 +21,7 @@ class Store {
     method array-clear() { @!array = () }
 }
 
-class GGE::Match {
+class GGE::Match is Cool {
     has $.target;
     has $.from is rw = 0;
     has $.to is rw = 0;
