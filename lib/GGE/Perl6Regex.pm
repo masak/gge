@@ -126,7 +126,7 @@ class GGE::Perl6Regex {
         my $match = parse_regex($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
-        my $exp = perl6exp($match.hash-access('expr'), { lexscope => {} });
+        my $exp = perl6exp($match<expr>, { lexscope => {} });
         my $binary = $exp.compile(:$debug);
         return self.bless(*, :$exp, :$binary);
     }
@@ -235,7 +235,7 @@ class GGE::Perl6Regex {
             #      PGE does this.
             my GGE::Exp $m = $isnegated ?? GGE::Exp::EnumCharList.new($mob)
                                         !! GGE::Exp::Literal.new($mob);
-            $m.hash-access('isnegated') = $isnegated;
+            $m<isnegated> = $isnegated;
             $m.make($escapes.ast);
             $m.to = $escapes.to + 1;
             return $m;
@@ -243,7 +243,7 @@ class GGE::Perl6Regex {
         elsif %esclist.exists($backchar) {
             my $charlist = %esclist{$backchar};
             my GGE::Exp $m = GGE::Exp::EnumCharList.new($mob);
-            $m.hash-access('isnegated') = $isnegated;
+            $m<isnegated> = $isnegated;
             $m.make($charlist);
             $m.to = $mob.to + 1;
             return $m;
@@ -273,12 +273,12 @@ class GGE::Perl6Regex {
         my $m = GGE::Exp::Subrule.new($mob);
         # RAKUDO: Regex::Match doesn't support .substr
         my $target = ~$mob.target;
-        my $key = $mob.hash-access('KEY');
+        my $key = $mob<KEY>;
         if $key eq '<!' {
-            $m.hash-access('isnegated') = True;
+            $m<isnegated> = True;
         }
         if $key eq '<?' | '<!' {
-            $m.hash-access('iszerowidth') = True;
+            $m<iszerowidth> = True;
         }
         my ($subname, $pos) = parse_subname($target, $mob.to);
         my $cname = $subname;
@@ -286,7 +286,7 @@ class GGE::Perl6Regex {
             $m.to = ++$pos;
             my $arg = parse_regex($m, :stop('>'));
             return $m unless $arg;
-            $m.hash-access('arg') = ~$arg;
+            $m<arg> = ~$arg;
             $pos = $arg.to;
             $m.to = -1;
         }
@@ -297,10 +297,10 @@ class GGE::Perl6Regex {
         if $target.substr($pos, 1) eq '>' {
             ++$pos;
             $m.to = $pos;
-            $m.hash-access('iscapture') = True;
+            $m<iscapture> = True;
         }
-        $m.hash-access('subname') = $subname;
-        $m.hash-access('cname') = q['] ~ $cname ~ q['];
+        $m<subname> = $subname;
+        $m<cname> = q['] ~ $cname ~ q['];
         return $m;
     }
 
@@ -308,7 +308,7 @@ class GGE::Perl6Regex {
         my $m;
         my $target = ~$mob.target;
         my $pos = $mob.to;
-        my $op = $mob.hash-access('KEY');
+        my $op = $mob<KEY>;
         if $op.substr(-1) eq '[' {
             $op .= chop;
         }
@@ -375,8 +375,8 @@ class GGE::Perl6Regex {
                 $term = GGE::Exp::Subrule.new($mob);
                 $term.from = $pos;
                 $term.to = $newpos;
-                $term.hash-access('subname') = $subname;
-                $term.hash-access('iscapture') = False;
+                $term<subname> = $subname;
+                $term<iscapture> = False;
                 $pos = $newpos;
             }
             if $op eq '+' {
@@ -387,8 +387,8 @@ class GGE::Perl6Regex {
                 $m = $alt;
             }
             elsif $op eq '-' {
-                $term.hash-access('isnegated') = True;
-                $term.hash-access('iszerowidth') = True;
+                $term<isnegated> = True;
+                $term<iszerowidth> = True;
                 my $concat = GGE::Exp::Concat.new($mob);
                 $concat.to = $pos;
                 $concat[0] = $term;
@@ -399,8 +399,8 @@ class GGE::Perl6Regex {
                 $m = $term;
             }
             else { # '<-' | '<!'
-                $term.hash-access('isnegated') = True;
-                $term.hash-access('iszerowidth') = True;
+                $term<isnegated> = True;
+                $term<iszerowidth> = True;
                 if $op eq '<!' {
                     $m = $term;
                 }
@@ -449,7 +449,7 @@ class GGE::Perl6Regex {
     our sub parse_quant($mob) {
         my $m = GGE::Exp::Quant.new($mob);
 
-        my $key = $mob.hash-access('KEY');
+        my $key = $mob<KEY>;
         my ($mod2, $mod1);
         # RAKUDO: Stringification needed due to [perl #73462]
         given ~$m.target {
@@ -457,14 +457,14 @@ class GGE::Perl6Regex {
             $mod1   = .substr($mob.to, 1);
         }
 
-        $m.hash-access('min') = 1;
+        $m<min> = 1;
         if $key eq '*' | '?' {
-            $m.hash-access('min') = 0;
+            $m<min> = 0;
         }
 
-        $m.hash-access('max') = 1;
+        $m<max> = 1;
         if $key eq '*' | '+' | '**' {
-            $m.hash-access('max') = Inf;
+            $m<max> = Inf;
         }
 
         #   The postfix:<:> operator may bring us here when it's really a
@@ -476,23 +476,23 @@ class GGE::Perl6Regex {
 
         $m.to = $mob.to;
         if $mod2 eq ':?' {
-            $m.hash-access('backtrack') = EAGER;
+            $m<backtrack> = EAGER;
             $m.to += 2;
         }
         elsif $mod2 eq ':!' {
-            $m.hash-access('backtrack') = GREEDY;
+            $m<backtrack> = GREEDY;
             $m.to += 2;
         }
         elsif $mod1 eq '?' {
-            $m.hash-access('backtrack') = EAGER;
+            $m<backtrack> = EAGER;
             ++$m.to;
         }
         elsif $mod1 eq '!' {
-            $m.hash-access('backtrack') = GREEDY;
+            $m<backtrack> = GREEDY;
             ++$m.to;
         }
         elsif $mod1 eq ':' || $key eq ':' {
-            $m.hash-access('backtrack') = NONE;
+            $m<backtrack> = NONE;
             ++$m.to;
         }
 
@@ -512,7 +512,7 @@ class GGE::Perl6Regex {
                 die 'perl6regex parse error: Error in repetition controller'
                     unless $repetition_controller;
                 my $pos = $repetition_controller.to;
-                $repetition_controller .= hash-access('expr');
+                $repetition_controller = $repetition_controller<expr>;
                 if $sepws {
                     my $concat = GGE::Exp::Concat.new($m);
                     $concat.to = $pos;
@@ -525,23 +525,23 @@ class GGE::Perl6Regex {
                     $concat.push($ws2);
                     $repetition_controller = $concat;
                 }
-                $m.hash-access('sep') = $repetition_controller;
-                $m.hash-access('min') = 1;
-                $m.hash-access('max') = Inf;
+                $m<sep> = $repetition_controller;
+                $m<min> = 1;
+                $m<max> = Inf;
                 $m.to = $pos;
             }
             else {
                 # XXX: Add test against non-digits inside braces .**{x..z}
                 # XXX: Need to generalize this into parsing several digits
-                $m.hash-access('min') = $m.hash-access('max')
+                $m<min> = $m<max>
                 # RAKUDO: Stringification needed due to [perl #73462]
                                       = (~$m.target).substr($m.to, 1);
                 ++$m.to;
                 if (~$m.target).substr($m.to, 2) eq '..' {
                     $m.to += 2;
-                    $m.hash-access('max') = (~$m.target).substr($m.to, 1);
-                    if $m.hash-access('max') eq '*' {
-                        $m.hash-access('max') = 'Inf';
+                    $m<max> = (~$m.target).substr($m.to, 1);
+                    if $m<max> eq '*' {
+                        $m<max> = 'Inf';
                     }
                     ++$m.to;
                 }
@@ -565,7 +565,7 @@ class GGE::Perl6Regex {
                 unless defined $closing-pos;
             my $m = GGE::Exp::Scalar.new($mob);
             # XXX: PGE escapes the thing here. Not sure about exactly how.
-            $m.hash-access('cname')
+            $m<cname>
                 = sprintf "'%s'",
                           $target.substr($pos + 1, $closing-pos - $pos - 1);
             $m.to = $closing-pos + 1;
@@ -574,7 +574,7 @@ class GGE::Perl6Regex {
         ++$pos while $target.substr($pos, 1) ~~ /\d/;
         if $pos > $mob.to {
             my $m = GGE::Exp::Scalar.new($mob);
-            $m.hash-access('cname') = $target.substr($mob.to, $pos - $mob.to);
+            $m<cname> = $target.substr($mob.to, $pos - $mob.to);
             $m.to = $pos;
             return $m;
         }
@@ -608,7 +608,7 @@ class GGE::Perl6Regex {
             $m.make($target.substr($pos, $closing-paren-pos - $pos));
             $pos = $closing-paren-pos + 1;
         }
-        $m.hash-access('key') = $word;
+        $m<key> = $word;
         $m.to = $pos;
         $m;
     }
@@ -618,7 +618,7 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::Modifier $exp is rw, %pad) {
-        my $key = $exp.hash-access('key');
+        my $key = $exp<key>;
         if $key eq 'i' {
             $key = 'ignorecase';
         }
@@ -634,7 +634,7 @@ class GGE::Perl6Regex {
 
     multi sub perl6exp(GGE::Exp::Concat $exp is rw, %pad) {
         my $n = $exp.elems;
-        my @old-children = $exp.llist;
+        my @old-children = $exp.list;
         $exp.clear;
         for @old-children -> $old-child {
             my $new-child = perl6exp($old-child, %pad);
@@ -652,11 +652,11 @@ class GGE::Perl6Regex {
         my $isarray = %pad<isarray>;
         %pad<isarray> = True;
         $exp[0] = perl6exp($exp[0], %pad);
-        if $exp.hash-access('sep') -> $sep {
-            $exp.hash-access('sep') = perl6exp($sep, %pad);
+        if $exp<sep> -> $sep {
+            $exp<sep> = perl6exp($sep, %pad);
         }
         %pad<isarray> = $isarray;
-        $exp.hash-access('backtrack') //= %pad<ratchet> ?? NONE() !! GREEDY;
+        $exp<backtrack> //= %pad<ratchet> ?? NONE() !! GREEDY;
         return $exp;
     }
 
@@ -695,18 +695,18 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::CGroup $exp is rw, %pad) {
-        $exp.hash-access('iscapture') = True;
+        $exp<iscapture> = True;
         unless $exp.exists('isscope') {
-            $exp.hash-access('isscope') = True;
+            $exp<isscope> = True;
         }
         unless $exp.exists('cname') {
             my $subpats = %pad<subpats> // 0;
-            $exp.hash-access('cname') = $subpats;
+            $exp<cname> = $subpats;
         }
-        %pad<subpats> = $exp.hash-access('cname') + 1;
+        %pad<subpats> = $exp<cname> + 1;
         my $isarray = %pad<isarray> // False;
-        if $exp.hash-access('isscope') {
-            $exp.hash-access('isarray') = $isarray;
+        if $exp<isscope> {
+            $exp<isarray> = $isarray;
             %pad<isarray> = False;
             my $subpats = %pad<subpats>;
             %pad<subpats> = 0;
@@ -721,19 +721,19 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::Subrule $exp is rw, %pad) {
-        my $cname = $exp.hash-access('cname');
+        my $cname = $exp<cname>;
         my $isarray = %pad<isarray>;
         if %pad<lexscope>.exists($cname) {
-            %pad<lexscope>{$cname}.hash-access('isarray') = True;
+            %pad<lexscope>{$cname}<isarray> = True;
             $isarray = True;
         }
         %pad<lexscope>{$cname} = $exp;
-        $exp.hash-access('isarray') = $isarray;
+        $exp<isarray> = $isarray;
         return $exp;
     }
 
     multi sub perl6exp(GGE::Exp::Cut $exp is rw, %pad) {
-        $exp.hash-access('cutmark') =
+        $exp<cutmark> =
                $exp.ast eq '::'  ?? CUT_GROUP()
             !! $exp.ast eq ':::' ?? CUT_RULE()
             !!                      CUT_MATCH;
@@ -741,14 +741,14 @@ class GGE::Perl6Regex {
     }
 
     multi sub perl6exp(GGE::Exp::Literal $exp is rw, %pad) {
-        $exp.hash-access('ignorecase') = %pad<ignorecase>;
+        $exp<ignorecase> = %pad<ignorecase>;
         return $exp;
     }
 
     multi sub perl6exp(GGE::Exp::WS $exp is rw, %pad) {
         if %pad<sigspace> {
-            $exp.hash-access('subname') = 'ws';
-            $exp.hash-access('iscapture') = False;
+            $exp<subname> = 'ws';
+            $exp<iscapture> = False;
             return $exp;
         }
         else {
@@ -764,10 +764,10 @@ class GGE::Perl6Regex {
         unless $exp[0] ~~ GGE::Exp::Scalar {
             die 'perl6regex parse error: LHS of alias must be lvalue';
         }
-        my $cname = $exp[0].hash-access('cname');
+        my $cname = $exp[0]<cname>;
         my $exp1 = $exp[1];
         if $exp1 ~~ GGE::Exp::CGroup {
-            $exp1.hash-access('cname') = $cname;
+            $exp1<cname> = $cname;
             $exp1 = perl6exp($exp1, %pad);
             return $exp1;
         }
@@ -778,8 +778,8 @@ class GGE::Perl6Regex {
         $cexp.from = $exp.from;
         $cexp.to   = $exp.to;
         $cexp[0]   = $exp1;
-        $cexp.hash-access('isscope') = False;
-        $cexp.hash-access('cname') = $cname;
+        $cexp<isscope> = False;
+        $cexp<cname> = $cname;
         $cexp = perl6exp($cexp, %pad);
         return $cexp;
     }

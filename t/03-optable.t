@@ -179,7 +179,7 @@ optable_output_is( 'a b', 'term:a (pos=1)', ':tighter option',
 sub optable_output_is($test, $expected, $msg, *%opts) {
     my $output;
     if $optable.parse($test, :stop(' ;'), |%opts) -> $match {
-        $output = tree($match.hash-access('expr'));
+        $output = tree($match<expr>);
         if $match.to != $test.chars {
             $output ~= " (pos={$match.to})";
         }
@@ -193,11 +193,11 @@ sub optable_output_is($test, $expected, $msg, *%opts) {
 
 sub tree($match) {
     return 'null' if !$match;
-    my $r = $match.hash-access('type');
-    given $match.hash-access('type') {
+    my $r = $match<type>;
+    given $match<type> {
         when 'term:'   { $r ~= $match }
-        when 'term->:' { $r ~= $match.hash-access('ident') }
-        $r ~= '(' ~ (join ', ', map { tree($_) }, $match.llist) ~ ')';
+        when 'term->:' { $r ~= $match<ident> }
+        $r ~= '(' ~ (join ', ', map { tree($_) }, $match.list) ~ ')';
     }
     return $r;
 }

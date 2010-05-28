@@ -147,9 +147,9 @@ class GGE::OPTable {
                     }
                     if $top<assoc> eq 'list'
                        && @temp[1]
-                       && $oper.hash-access('type')
-                          eq @temp[1].hash-access('type') {
-                        @temp[1].push($oper.llist[1]);
+                       && $oper<type>
+                          eq @temp[1]<type> {
+                        @temp[1].push($oper.list[1]);
                         $oper = @temp[1];
                     }
                     push @termstack, $oper;
@@ -200,15 +200,15 @@ class GGE::OPTable {
                     my $oper = $matchclass.new(:from($pos),
                                                :to($pos + $key.chars),
                                                :$target);
-                    $oper.hash-access('type') = $name;
+                    $oper<type> = $name;
                     if $token.exists('parsed') {
                         my $routine = $token<parsed>;
                         if $routine ~~ Sub|Method {
-                            $m.hash-access('KEY') = $key;
+                            $m<KEY> = $key;
                             $m.to = $pos + $key.chars;
                             $oper = $routine($m);
                             $m.delete('KEY');
-                            $oper.hash-access('type') = $name;
+                            $oper<type> = $name;
                             $oper.from = $pos;
                             if ?$oper {
                                 $pos = $oper.to;
@@ -370,7 +370,7 @@ class GGE::OPTable {
             }
         }
         if @termstack && ?@termstack[0] {
-            $m.hash-access('expr') = @termstack[0];
+            $m<expr> = @termstack[0];
             if $pos <= 0 {
                 $m.to = @termstack[0].to;
             }

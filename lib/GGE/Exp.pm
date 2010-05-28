@@ -65,8 +65,8 @@ class GGE::Exp is GGE::Match {
         #         a bug somewhere in &map and lexical pads. The workaround
         #         is to write it as a for loop.
         my $inside = '';
-        if self.llist {
-            for self.llist {
+        if self.list {
+            for self.list {
                 $inside ~= "\n" ~ $_.structure($indent + 1);
             }
             $inside = "[$inside\n" ~ '  ' x $indent ~ ']';
@@ -175,12 +175,12 @@ class GGE::Exp is GGE::Match {
         %hash<S> = $next;
         if %hash.exists('quant') {
             my $quant = %hash<quant>;
-            %hash<m> = $quant.hash-access('min');
+            %hash<m> = $quant<min>;
             %hash<M> = %hash<m> == 0   ?? '### ' !! '';
-            %hash<n> = $quant.hash-access('max');
+            %hash<n> = $quant<max>;
             %hash<N> = %hash<n> == Inf ?? '### ' !! '';
             # RAKUDO: Waiting for named enums for this one
-            # my $bt = ($quant.hash-access('backtrack') // GREEDY).name.lc;
+            # my $bt = ($quant<backtrack> // GREEDY).name.lc;
             my $bt = 'no idea';
             %hash<Q> = sprintf '%s..%s (%s)', %hash<m>, %hash<n>, $bt;
         }
@@ -188,15 +188,15 @@ class GGE::Exp is GGE::Match {
     }
 
     method gencapture($label) {
-        my $cname = self.hash-access('cname');
+        my $cname = self<cname>;
         my $captgen  = CodeString.new;
         my $captsave = CodeString.new;
         my $captback = CodeString.new;
         my $indexing = $cname.substr(0, 1) eq q[']
-                        ?? "\$captscope.hash-access($cname)"
+                        ?? "\$captscope\{$cname\}"
                         !! "\$captscope[$cname]";
-        if self.hash-access('iscapture') {
-            if self.hash-access('isarray') {
+        if self<iscapture> {
+            if self<isarray> {
                 $captsave.emit('%0.push($captob);', $indexing);
                 $captback.emit('%0.pop();', $indexing);
                 $captgen.emit( q[[if defined %0 {
@@ -234,7 +234,7 @@ class GGE::Exp::Literal is GGE::Exp does GGE::ShowContents {
         my $literal = self.ast;
         my $litlen = $literal.chars;
         %args<I> = '';
-        if self.hash-access('ignorecase') {
+        if self<ignorecase> {
             %args<I> = '.lc';
             $literal .= lc;
         }
@@ -254,7 +254,7 @@ class GGE::Exp::Literal is GGE::Exp does GGE::ShowContents {
 
 class GGE::Exp::Quant is GGE::Exp {
     method contents() {
-        my ($min, $max, $bt) = map { self.hash-access($_) },
+        my ($min, $max, $bt) = map { self{$_} },
                                    <min max backtrack>;
         $bt //= GREEDY;
         # RAKUDO: Named enums
@@ -268,7 +268,7 @@ class GGE::Exp::Quant is GGE::Exp {
         my $explabel = $code.unique('R');
         my $nextlabel = $explabel;
         my $seplabel;
-        if self.hash-access('sep') {
+        if self<sep> {
             $seplabel = $code.unique('R');
             $nextlabel = $label ~ '_sep';
         }
@@ -276,7 +276,7 @@ class GGE::Exp::Quant is GGE::Exp {
         # %args<c C> = 0, '### ';
         %args<c> = 0;
         %args<C> = '### ';
-        given self.hash-access('backtrack') {
+        given self<backtrack> {
             when EAGER() {
                 $code.emit( q[[
             when '%L' { # quant %Q eager
@@ -313,8 +313,8 @@ class GGE::Exp::Quant is GGE::Exp {
                 # %args<c C> = $code.unique(), '';
                 %args<c> = $code.unique();
                 %args<C> = '';
-                if self.hash-access('min') != 0
-                   || self.hash-access('max') != Inf {
+                if self<min> != 0
+                   || self<max> != Inf {
                     proceed;
                 }
                 $code.emit( q[[
@@ -384,7 +384,7 @@ class GGE::Exp::Quant is GGE::Exp {
             } ]], $replabel, $nextlabel, |%args);
             }
         }
-        if self.hash-access('sep') -> $sep {
+        if self<sep> -> $sep {
             $code.emit( q[[
             when '%0' {
                 if $rep == 1 { goto('%1'); succeed; }
@@ -503,13 +503,13 @@ class GGE::Exp::Anchor is GGE::Exp does GGE::ShowContents {
 class GGE::Exp::Concat is GGE::Exp {
     method reduce() {
         my $n = self.elems;
-        my @old-children = self.llist;
+        my @old-children = self.list;
         self.clear;
         for @old-children -> $old-child {
             my $new-child = $old-child.reduce();
             self.push($new-child);
         }
-        return self.llist == 1 ?? self[0] !! self;
+        return self.list == 1 ?? self[0] !! self;
     }
 
     method p6($code, $label, $next) {
@@ -517,8 +517,8 @@ class GGE::Exp::Concat is GGE::Exp {
             # concat ]);
         my $cl = $label;
         my $nl;
-        my $end = self.llist.elems - 1;
-        for self.llist.kv -> $i, $child {
+        my $end = self.list.elems - 1;
+        for self.list.kv -> $i, $child {
             $nl = $i == $end ?? $next !! $code.unique('R');
             $child.p6($code, $cl, $nl);
             $cl = $nl;
@@ -528,7 +528,7 @@ class GGE::Exp::Concat is GGE::Exp {
 
 class GGE::Exp::Modifier   is GGE::Exp does GGE::ShowContents {
     method contents() {
-        self.hash-access('key');
+        self<key>;
     }
 
     method start($, $, %) { DESCEND }
@@ -537,9 +537,9 @@ class GGE::Exp::Modifier   is GGE::Exp does GGE::ShowContents {
 class GGE::Exp::EnumCharList is GGE::Exp does GGE::ShowContents {
     method contents() {
         my $prefix = '';
-        if self.hash-access('isnegated') {
+        if self<isnegated> {
             $prefix = '-';
-            if self.hash-access('iszerowidth') {
+            if self<iszerowidth> {
                 $prefix = '!';
             }
         }
@@ -548,7 +548,7 @@ class GGE::Exp::EnumCharList is GGE::Exp does GGE::ShowContents {
     }
 
     method p6($code, $label, $next) {
-        my $test = self.hash-access('isnegated') ?? 'defined' !! '!defined';
+        my $test = self<isnegated> ?? 'defined' !! '!defined';
         my $charlist = $code.escape(self.ast);
         $code.emit( q[
             when '%0' {
@@ -643,8 +643,8 @@ class GGE::Exp::Group is GGE::Exp {
         $GGE::Exp::group = self;
         self[0] .= reduce;
         $GGE::Exp::group = $group;
-        return self.exists('cutmark') && self.hash-access('cutmark') > 0
-            || self.exists('iscapture') && self.hash-access('iscapture') != 0
+        return self.exists('cutmark') && self<cutmark> > 0
+            || self.exists('iscapture') && self<iscapture> != 0
                 ?? self
                 !! self[0];
     }
@@ -662,10 +662,10 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
         my %args = self.getargs($label, $next, {});
         my ($captgen, $captsave, $captback) = self.gencapture($label);
         # RAKUDO: Hash slices not implemented yet
-        # %args<c C> = self.hash-access('cutmark'), '### ';
-        %args<c> = self.hash-access('cutmark');
+        # %args<c C> = self<cutmark>, '### ';
+        %args<c> = self<cutmark>;
         %args<C> = '### ';
-        %args<X> = self.hash-access('isscope') ?? '' !! '### ';
+        %args<X> = self<isscope> ?? '' !! '### ';
         $code.emit( q[[
             when '%L' { # capture
                 %0
@@ -709,18 +709,18 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
 
 class GGE::Exp::Cut is GGE::Exp {
     method reduce() {
-        if self.hash-access('cutmark') > CUT_RULE() {
+        if self<cutmark> > CUT_RULE() {
             my $group = $GGE::Exp::group;
-            if !$group.hash-access('cutmark') {
-                $group.hash-access('cutmark') = CodeString.unique();
+            if !$group<cutmark> {
+                $group<cutmark> = CodeString.unique();
             }
-            self.hash-access('cutmark') = $group.hash-access('cutmark');
+            self<cutmark> = $group<cutmark>;
         }
         return self;
     }
 
     method p6($code, $label, $next) {
-        my $cutmark = self.hash-access('cutmark') // 'NO_CUTMARK';
+        my $cutmark = self<cutmark> // 'NO_CUTMARK';
         $code.emit( q[
             when '%0' { # cut %2
                 local-branch('%1');
@@ -734,9 +734,9 @@ class GGE::Exp::Cut is GGE::Exp {
 
 class GGE::Exp::Scalar is GGE::Exp does GGE::ShowContents {
     method p6($code, $label, $next) {
-        my $cname = self.hash-access('cname');
+        my $cname = self<cname>;
         my $C = $cname.substr(0, 1) eq q[']
-                ?? '$mob.hash-access(' ~ $cname ~ ')'
+                ?? '$mob<' ~ $cname ~ '>'
                 !! '$mob[' ~ $cname ~ ']';
         $code.emit( q[[
             when '%0' { # scalar %2
@@ -759,7 +759,7 @@ class GGE::Exp::Scalar is GGE::Exp does GGE::ShowContents {
 
 class GGE::Exp::Alias is GGE::Exp {
     method contents() {
-        self.hash-access('cname');
+        self<cname>;
     }
 }
 
@@ -767,10 +767,10 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
     method p6($code, $label, $next) {
         # RAKUDO: [perl #74454]
         my %args = self.getargs($label, $next, {});
-        my $subname = self.hash-access('subname');
+        my $subname = self<subname>;
         my ($captgen, $captsave, $captback) = self.gencapture($label);
-        my $subarg = self.hash-access('arg') // ''
-                        ?? $code.escape(self.hash-access('arg'))
+        my $subarg = self<arg> // ''
+                        ?? $code.escape(self<arg>)
                         !! '';
         $code.emit( q[[
             when '%L' { # grammar subrule %0
@@ -780,8 +780,8 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
                     die "Unable to find regex '%0'";
                 }
                 $captob = $captob.%0(%1); ]], $subname, $subarg, |%args);
-        if self.hash-access('iszerowidth') {
-            my $test = self.hash-access('isnegated') ?? 'unless' !! 'if';
+        if self<iszerowidth> {
+            my $test = self<isnegated> ?? 'unless' !! 'if';
             $code.emit( q[[
                 # XXX: fail match
                 %1 $captob.to < 0 { goto('fail'); succeed; }

@@ -2,35 +2,17 @@ use v6;
 
 class GGE::Perl6Regex { ... }
 
-# This is a workaround. See the postcircumfix:<{ }> comments below.
-class Store {
-    has %!hash is rw;
-    has @!array is rw;
-
-    method hash-access($key) { %!hash{$key} }
-    method hash-exists($key) { %!hash.exists($key) }
-    method hash-delete($key) { %!hash.delete($key) }
-    method hash-keys()       { %!hash.keys() }
-
-    method array-access($index) { @!array[$index] }
-    method array-setelem($index, $value) { @!array[$index] = $value }
-    method array-push($item) { @!array.push($item) }
-    method array-pop() { @!array.pop() }
-    method array-list() { @!array.list }
-    method array-elems() { @!array.elems }
-    method array-clear() { @!array = () }
-}
-
 class GGE::Match is Cool {
     has $.target;
     has $.from is rw = 0;
     has $.to is rw = 0;
     has $.iscont = False;
     has $.startpos = 0;
-    has $!store = Store.new;
     has $!ast;
 
-    # RAKUDO: Shouldn't need this
+    has %!properties is rw;
+    has @!children is rw;
+
     multi method new(*%_) {
         self.bless(*, |%_);
     }
@@ -55,8 +37,8 @@ class GGE::Match is Cool {
                           $prefix,
                                 $!target.substr($!from, $!to - $!from),
                                      $!from;
-        if self.llist {
-            for self.llist.kv -> $index, $elem {
+        if self.list {
+            for self.list.kv -> $index, $elem {
                 my $name = [~] $prefix, $b1, $index, $b2;
                 given $elem {
                     when !.defined { next }
@@ -76,7 +58,7 @@ class GGE::Match is Cool {
             }
         }
         for self.keys -> $key {
-            my $elem = self.hash-access($key);
+            my $elem = self{$key};
             my $name = [~] $prefix, '<', $key, '>';
             given $elem {
                 when !.defined { next }
@@ -102,44 +84,21 @@ class GGE::Match is Cool {
         (~$!target).substr($!from, $!to - $!from)
     }
 
-    # RAKUDO: There's a bug preventing me from using hash lookup in a
-    #         postcircumfix:<{ }> method. This workaround uses the above
-    #         class to put the problematic hash lookup out of reach.
-    # RAKUDO: Now there's also a bug which spews out false warnings due to
-    #         postcircumfix:<{ }> declarations. Will have to do without
-    #         this declaration until that is resolved, in order to be able
-    #         to build GGE. [perl #70922]
-  #  method postcircumfix:<{ }>($key) { $!store.hash-access($key) }
-    method hash-access($key) { $!store.hash-access($key) }
-    method postcircumfix:<[ ]>($index) { $!store.array-access($index) }
+    method postcircumfix:<{ }>($key) { %!properties{$key} }
 
-    method set($index, $value) { $!store.array-setelem($index, $value) }
+    # RAKUDO: All these can be shortened down to a 'handles' declaration,
+    #         once Rakudo implements 'handles' again.
+    method exists($key) { %!properties.exists($key) }
+    method delete($key) { %!properties.delete($key) }
+    method keys() { %!properties.keys() }
 
-    method exists($key) { $!store.hash-exists($key) }
+    method postcircumfix:<[ ]>($index) { @!children[$index] }
 
-    method delete($key) { $!store.hash-delete($key) }
-
-    method keys() { $!store.hash-keys() }
-
-    method push($submatch) {
-        $!store.array-push($submatch);
-    }
-
-    method pop() {
-        $!store.array-pop();
-    }
-
-    method llist() {
-        $!store.array-list();
-    }
-
-    method elems() {
-        $!store.array-elems();
-    }
-
-    method clear() {
-        $!store.array-clear();
-    }
+    method push($submatch) { @!children.push($submatch) }
+    method pop() { @!children.pop() }
+    method list() { @!children.list() }
+    method elems() { @!children.elems() }
+    method clear() { @!children = () }
 
     method make($obj) {
         $!ast = $obj;
