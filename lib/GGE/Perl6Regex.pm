@@ -638,9 +638,7 @@ class GGE::Perl6Regex {
         $exp.clear;
         for @old-children -> $old-child {
             my $new-child = perl6exp($old-child, %pad);
-            # XXX: Should really be testing definedness, like PGE. Not sure
-            #      that it matters, though.
-            if $new-child {
+            if defined $new-child {
                 $exp.push($new-child);
             }
         }
@@ -754,7 +752,11 @@ class GGE::Perl6Regex {
             return $exp;
         }
         else {
-            return Nil;
+            return Mu; # should be Nil, but we need to store the result
+                       # from this call in a variable, and currently
+                       # Rakudo promotes a Nil to something defined when
+                       # it's stored into a variable, making the subsequent
+                       # undefinedness test fail
         }
     }
 
