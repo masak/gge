@@ -9,11 +9,6 @@ class GGE::Exp::WS is GGE::Exp::Subrule {
     method contents() {}
 }
 
-# XXX: why 'is also'? Because we'd really like to do something like
-# &::<GGE::Perl6Regex::parse_regex> in GGE::Match::before (and after), but
-# that syntax isn't implemented yet. Thus, we do the next best thing and
-# declare the GGE::Perl6Regex class in the GGE::Match module, and re-open it
-# here.
 class GGE::Perl6Regex {
     has GGE::Exp $!exp;
     has Callable $!binary;
@@ -123,7 +118,8 @@ class GGE::Perl6Regex {
                     :parsed(&GGE::Perl6Regex::parse_modifier));
 
     method new($pattern, :$debug) {
-        my $match = parse_regex($pattern);
+        # RAKUDO: Cannot call a sub named 'regex' without the '&'
+        my $match = &regex($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
         my $exp = perl6exp($match<expr>, { lexscope => {} });
@@ -138,8 +134,7 @@ class GGE::Perl6Regex {
         $!binary($target, :$debug);
     }
 
-    # RAKUDO: Cannot call a sub named 'regex'.
-    sub parse_regex($mob, :$tighter, :$stop) {
+    sub regex($mob, :$tighter, :$stop) {
         return $optable.parse($mob, :$tighter, :$stop);
     }
 
@@ -265,8 +260,7 @@ class GGE::Perl6Regex {
             ++$pos;
         }
         my $subname = $target.substr($startpos, $pos - $startpos);
-        # RAKUDO: Can only return one thing. Returning a list as a workaround.
-        return ($subname, $pos);
+        return $subname, $pos;
     }
 
     our sub parse_subrule($mob) {
@@ -284,7 +278,8 @@ class GGE::Perl6Regex {
         my $cname = $subname;
         if $target.substr($pos, 1) eq ' ' {
             $m.to = ++$pos;
-            my $arg = parse_regex($m, :stop('>'));
+            # RAKUDO: Cannot call a sub named 'regex' without the '&'
+            my $arg = &regex($m, :stop('>'));
             return $m unless $arg;
             $m<arg> = ~$arg;
             $pos = $arg.to;
@@ -508,7 +503,8 @@ class GGE::Perl6Regex {
                 ++$m.to;
             }
             if $sep {
-                my $repetition_controller = parse_regex($m, :tighter<infix:>);
+                # RAKUDO: Cannot call a sub named 'regex' without the '&'
+                my $repetition_controller = &regex($m, :tighter<infix:>);
                 die 'perl6regex parse error: Error in repetition controller'
                     unless $repetition_controller;
                 my $pos = $repetition_controller.to;
