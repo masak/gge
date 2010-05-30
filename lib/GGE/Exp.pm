@@ -37,28 +37,31 @@ role GGE::ShowContents {
     }
 }
 
-# RAKUDO: Could name this one GGE::Exp::CUT or something, if enums
-#         with '::' in them worked, which they don't. [perl #71460]
-our sub CUT_GROUP { -1 }
-our sub CUT_RULE  { -2 }
-our sub CUT_MATCH { -3 }
-#enum CUT (
-#    CUT_GROUP => -1,
-#    CUT_RULE  => -2,
-#    CUT_MATCH => -3,
-#);
-
-our sub GREEDY { 0 }
-our sub EAGER  { 1 }
-our sub NONE   { 2 }
-#enum GGE_BACKTRACK <
-#    GREEDY
-#    EAGER
-#    NONE
-#>;
 
 class GGE::Exp is GGE::Match {
     our $group;
+
+    # RAKUDO: Should be just 'CutType' [RT #75454]
+    package GGE::Exp::CutType {
+        our sub CUT_GROUP { -1 }
+        our sub CUT_RULE  { -2 }
+        our sub CUT_MATCH { -3 }
+    }
+    # RAKUDO: Enums don't work enough yet.
+    # our enum GGE::Exp::CutType (
+    #     CUT_GROUP => -1,
+    #     CUT_RULE  => -2,
+    #     CUT_MATCH => -3,
+    # );
+
+    # RAKUDO: Should be just 'Backtracking' [RT #75454]
+    package GGE::Exp::Backtracking {
+        our sub GREEDY { 0 }
+        our sub EAGER  { 1 }
+        our sub NONE   { 2 }
+    }
+    # RAKUDO: Enums don't work enough yet.
+    # our enum GGE::Exp::Backtracking <GREEDY EAGER NONE>;
 
     method structure($indent = 0) {
         # RAKUDO: The below was originally written as a map, but there's
@@ -148,7 +151,7 @@ class GGE::Exp is GGE::Match {
             }
             when 'fail' {
                 local-return();
-            } ]], CUT_RULE);
+            } ]], GGE::Exp::CutType::CUT_RULE);
         my $explabel = 'R';
         $GGE::Exp::group = self;
         my $exp = self.reduce;
@@ -180,7 +183,8 @@ class GGE::Exp is GGE::Match {
             %hash<n> = $quant<max>;
             %hash<N> = %hash<n> == Inf ?? '### ' !! '';
             # RAKUDO: Waiting for named enums for this one
-            # my $bt = ($quant<backtrack> // GREEDY).name.lc;
+            # my $bt = ($quant<backtrack>
+            #           // GGE::Exp::Backtracking::GREEDY).name.lc;
             my $bt = 'no idea';
             %hash<Q> = sprintf '%s..%s (%s)', %hash<m>, %hash<n>, $bt;
         }
@@ -256,7 +260,7 @@ class GGE::Exp::Quant is GGE::Exp {
     method contents() {
         my ($min, $max, $bt) = map { self{$_} },
                                    <min max backtrack>;
-        $bt //= GREEDY;
+        $bt //= GGE::Exp::Backtracking::GREEDY;
         # RAKUDO: Named enums
         # "{$bt.name.lc} $min..$max"
         "no idea $min..$max"
@@ -277,7 +281,7 @@ class GGE::Exp::Quant is GGE::Exp {
         %args<c> = 0;
         %args<C> = '### ';
         given self<backtrack> {
-            when EAGER() {
+            when GGE::Exp::Backtracking::EAGER() {
                 $code.emit( q[[
             when '%L' { # quant %Q eager
                 push @gpad, 0;
@@ -308,7 +312,7 @@ class GGE::Exp::Quant is GGE::Exp {
                 goto('%1');
             } ]], $replabel, $nextlabel, |%args);
             }
-            when NONE() {
+            when GGE::Exp::Backtracking::NONE() {
                 # RAKUDO: Hash slices not implemented yet
                 # %args<c C> = $code.unique(), '';
                 %args<c> = $code.unique();
@@ -709,7 +713,7 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
 
 class GGE::Exp::Cut is GGE::Exp {
     method reduce() {
-        if self<cutmark> > CUT_RULE() {
+        if self<cutmark> > GGE::Exp::CutType::CUT_RULE() {
             my $group = $GGE::Exp::group;
             if !$group<cutmark> {
                 $group<cutmark> = CodeString.unique();
@@ -802,7 +806,8 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
             when '%L_cont' {
                 %4
                 goto('fail');
-            } ]], CUT_MATCH, $next, $captgen, $captsave, $captback, |%args);
+            } ]], GGE::Exp::CutType::CUT_MATCH, $next,
+                  $captgen, $captsave, $captback, |%args);
         }
     }
 }

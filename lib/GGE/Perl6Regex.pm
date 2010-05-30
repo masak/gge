@@ -471,23 +471,23 @@ class GGE::Perl6Regex {
 
         $m.to = $mob.to;
         if $mod2 eq ':?' {
-            $m<backtrack> = EAGER;
+            $m<backtrack> = GGE::Exp::Backtracking::EAGER;
             $m.to += 2;
         }
         elsif $mod2 eq ':!' {
-            $m<backtrack> = GREEDY;
+            $m<backtrack> = GGE::Exp::Backtracking::GREEDY;
             $m.to += 2;
         }
         elsif $mod1 eq '?' {
-            $m<backtrack> = EAGER;
+            $m<backtrack> = GGE::Exp::Backtracking::EAGER;
             ++$m.to;
         }
         elsif $mod1 eq '!' {
-            $m<backtrack> = GREEDY;
+            $m<backtrack> = GGE::Exp::Backtracking::GREEDY;
             ++$m.to;
         }
         elsif $mod1 eq ':' || $key eq ':' {
-            $m<backtrack> = NONE;
+            $m<backtrack> = GGE::Exp::Backtracking::NONE;
             ++$m.to;
         }
 
@@ -652,7 +652,9 @@ class GGE::Perl6Regex {
             $exp<sep> = perl6exp($sep, %pad);
         }
         %pad<isarray> = $isarray;
-        $exp<backtrack> //= %pad<ratchet> ?? NONE() !! GREEDY;
+        $exp<backtrack> //= %pad<ratchet>
+            ?? GGE::Exp::Backtracking::NONE()
+            !! GGE::Exp::Backtracking::GREEDY;
         return $exp;
     }
 
@@ -730,9 +732,9 @@ class GGE::Perl6Regex {
 
     multi sub perl6exp(GGE::Exp::Cut $exp is rw, %pad) {
         $exp<cutmark> =
-               $exp.ast eq '::'  ?? CUT_GROUP()
-            !! $exp.ast eq ':::' ?? CUT_RULE()
-            !!                      CUT_MATCH;
+               $exp.ast eq '::'  ?? GGE::Exp::CutType::CUT_GROUP()
+            !! $exp.ast eq ':::' ?? GGE::Exp::CutType::CUT_RULE()
+            !!                      GGE::Exp::CutType::CUT_MATCH;
         return $exp;
     }
 
