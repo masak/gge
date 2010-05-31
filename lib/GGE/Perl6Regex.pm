@@ -118,7 +118,7 @@ class GGE::Perl6Regex {
                     :parsed(&GGE::Perl6Regex::parse_modifier));
 
     method new($pattern, :$debug) {
-        # RAKUDO: Cannot call a sub named 'regex' without the '&'
+        # RAKUDO: Cannot call a sub named 'regex' without the '&' [perl #72438]
         my $match = &regex($pattern);
         die 'Perl6Regex rule error: can not parse expression'
             if $match.to < $pattern.chars;
@@ -139,14 +139,12 @@ class GGE::Perl6Regex {
     }
 
     our sub parse_term($mob) {
-        # RAKUDO: Stringification needed due to [perl #73462]
-        if (~$mob.target).substr($mob.to, 1) ~~ /\s/ {
+        if $mob.target.substr($mob.to, 1) ~~ /\s/ {
             return parse_term_ws($mob);
         }
         my $m = GGE::Exp::Literal.new($mob);
         my $pos = $mob.to;
-        # RAKUDO: Stringification needed due to [perl #73462]
-        my $target = ~$m.target;
+        my $target = $m.target;
         while $target.substr($pos, 1) ~~ /\w/ {
             ++$pos;
         }
@@ -163,8 +161,7 @@ class GGE::Perl6Regex {
     our sub parse_term_ws($mob) {
         my $m = GGE::Exp::WS.new($mob);
         $m.to = $mob.to;
-        # RAKUDO: Stringification needed due to [perl #73462]
-        $m.to++ while (~$m.target).substr($m.to, 1) ~~ /\s/;
+        $m.to++ while $m.target.substr($m.to, 1) ~~ /\s/;
         if (~$m.target).substr($m.to, 1) eq '#' {
             my $delim = "\n";
             $m.to = defined (~$m.target).index($delim, $m.to)
@@ -265,8 +262,7 @@ class GGE::Perl6Regex {
 
     our sub parse_subrule($mob) {
         my $m = GGE::Exp::Subrule.new($mob);
-        # RAKUDO: Regex::Match doesn't support .substr
-        my $target = ~$mob.target;
+        my $target = $mob.target;
         my $key = $mob<KEY>;
         if $key eq '<!' {
             $m<isnegated> = True;
@@ -278,7 +274,8 @@ class GGE::Perl6Regex {
         my $cname = $subname;
         if $target.substr($pos, 1) eq ' ' {
             $m.to = ++$pos;
-            # RAKUDO: Cannot call a sub named 'regex' without the '&'
+            # RAKUDO: Cannot call a sub named 'regex'
+            #         without the '&' [perl #72438]
             my $arg = &regex($m, :stop('>'));
             return $m unless $arg;
             $m<arg> = ~$arg;
@@ -446,10 +443,9 @@ class GGE::Perl6Regex {
 
         my $key = $mob<KEY>;
         my ($mod2, $mod1);
-        # RAKUDO: Stringification needed due to [perl #73462]
-        given ~$m.target {
-            $mod2   = .substr($mob.to, 2);
-            $mod1   = .substr($mob.to, 1);
+        given $m.target {
+            $mod2 = .substr($mob.to, 2);
+            $mod1 = .substr($mob.to, 1);
         }
 
         $m<min> = 1;
@@ -493,17 +489,17 @@ class GGE::Perl6Regex {
 
         if $key eq '**' {
             # XXX: Should also count ws before quant modifiers -- with tests
-            # RAKUDO: Stringification needed due to [perl #73462]
-            my $sepws = ?((~$m.target).substr($m.to, 1) ~~ /\s/);
-            ++$m.to while (~$m.target).substr($m.to, 1) ~~ /\s/;
-            my $isconst = (~$m.target).substr($m.to, 1) ~~ /\d/;
+            my $sepws = ?($m.target.substr($m.to, 1) ~~ /\s/);
+            ++$m.to while $m.target.substr($m.to, 1) ~~ /\s/;
+            my $isconst = $m.target.substr($m.to, 1) ~~ /\d/;
             my $sep = !$isconst;
             if (~$m.target).substr($m.to, 1) eq '{' {
                 $sep = False;
                 ++$m.to;
             }
             if $sep {
-                # RAKUDO: Cannot call a sub named 'regex' without the '&'
+                # RAKUDO: Cannot call a sub named 'regex'
+                #         without the '&' [perl #72438]
                 my $repetition_controller = &regex($m, :tighter<infix:>);
                 die 'perl6regex parse error: Error in repetition controller'
                     unless $repetition_controller;
@@ -529,9 +525,7 @@ class GGE::Perl6Regex {
             else {
                 # XXX: Add test against non-digits inside braces .**{x..z}
                 # XXX: Need to generalize this into parsing several digits
-                $m<min> = $m<max>
-                # RAKUDO: Stringification needed due to [perl #73462]
-                                      = (~$m.target).substr($m.to, 1);
+                $m<min> = $m<max> = $m.target.substr($m.to, 1);
                 ++$m.to;
                 if (~$m.target).substr($m.to, 2) eq '..' {
                     $m.to += 2;

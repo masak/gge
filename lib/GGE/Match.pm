@@ -80,14 +80,13 @@ class GGE::Match is Cool {
     }
 
     method Str() {
-        # RAKUDO: Stringification needed due to [perl #73462]
-        (~$!target).substr($!from, $!to - $!from)
+        $!target.substr($!from, $!to - $!from)
     }
 
     method postcircumfix:<{ }>($key) { %!properties{$key} }
 
     # RAKUDO: All these can be shortened down to a 'handles' declaration,
-    #         once Rakudo implements 'handles' again.
+    #         once Rakudo implements 'handles' again. [perl #75386]
     method exists($key) { %!properties.exists($key) }
     method delete($key) { %!properties.delete($key) }
     method keys() { %!properties.keys() }
@@ -117,8 +116,7 @@ class GGE::Match is Cool {
                          && $target.substr($pos, 1) ~~ /\w/;
             $mob.to = $pos;
         }
-        # RAKUDO: Putting 'return' here makes Rakudo blow up.
-        $mob;
+        return $mob;
     }
 
     method name() {

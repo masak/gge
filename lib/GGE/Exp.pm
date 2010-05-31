@@ -172,17 +172,14 @@ class GGE::Exp is GGE::Match {
 
     # RAKUDO: [perl #74454]
     method getargs($label, $next, %hash is copy) {
-        # RAKUDO: Still waiting for hash slices to be brought back
-        # %hash<L S> = $label, $next;
-        %hash<L> = $label;
-        %hash<S> = $next;
+        %hash<L S> = $label, $next;
         if %hash.exists('quant') {
             my $quant = %hash<quant>;
             %hash<m> = $quant<min>;
             %hash<M> = %hash<m> == 0   ?? '### ' !! '';
             %hash<n> = $quant<max>;
             %hash<N> = %hash<n> == Inf ?? '### ' !! '';
-            # RAKUDO: Waiting for named enums for this one
+            # RAKUDO: Waiting for proper named enums for this one
             # my $bt = ($quant<backtrack>
             #           // GGE::Exp::Backtracking::GREEDY).name.lc;
             my $bt = 'no idea';
@@ -226,8 +223,7 @@ class GGE::Exp is GGE::Match {
                 }
             }
         }
-        # RAKUDO: Cannot do multiple returns yet.
-        return ($captgen, $captsave, $captback);
+        return $captgen, $captsave, $captback;
     }
 }
 
@@ -261,7 +257,7 @@ class GGE::Exp::Quant is GGE::Exp {
         my ($min, $max, $bt) = map { self{$_} },
                                    <min max backtrack>;
         $bt //= GGE::Exp::Backtracking::GREEDY;
-        # RAKUDO: Named enums
+        # RAKUDO: Proper named enums
         # "{$bt.name.lc} $min..$max"
         "no idea $min..$max"
     }
@@ -276,10 +272,7 @@ class GGE::Exp::Quant is GGE::Exp {
             $seplabel = $code.unique('R');
             $nextlabel = $label ~ '_sep';
         }
-        # RAKUDO: Hash slices not implemented yet
-        # %args<c C> = 0, '### ';
-        %args<c> = 0;
-        %args<C> = '### ';
+        %args<c C> = 0, '### ';
         given self<backtrack> {
             when GGE::Exp::Backtracking::EAGER() {
                 $code.emit( q[[
@@ -313,10 +306,7 @@ class GGE::Exp::Quant is GGE::Exp {
             } ]], $replabel, $nextlabel, |%args);
             }
             when GGE::Exp::Backtracking::NONE() {
-                # RAKUDO: Hash slices not implemented yet
-                # %args<c C> = $code.unique(), '';
-                %args<c> = $code.unique();
-                %args<C> = '';
+                %args<c C> = $code.unique(), '';
                 if self<min> != 0
                    || self<max> != Inf {
                     proceed;
@@ -665,10 +655,7 @@ class GGE::Exp::CGroup is GGE::Exp::Group {
         # RAKUDO: [perl #74454]
         my %args = self.getargs($label, $next, {});
         my ($captgen, $captsave, $captback) = self.gencapture($label);
-        # RAKUDO: Hash slices not implemented yet
-        # %args<c C> = self<cutmark>, '### ';
-        %args<c> = self<cutmark>;
-        %args<C> = '### ';
+        %args<c C> = self<cutmark>, '### ';
         %args<X> = self<isscope> ?? '' !! '### ';
         $code.emit( q[[
             when '%L' { # capture

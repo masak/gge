@@ -3,7 +3,6 @@ use v6;
 use GGE::Match;
 
 class GGE::OPTable {
-    # RAKUDO: Must define these within the class for them to be visible.
     # RAKUDO: Constants-in-classes broke after a merge. Working around.
     ##constant GGE_OPTABLE_EXPECT_TERM   = 0x01;
     ##constant GGE_OPTABLE_EXPECT_OPER   = 0x02;
@@ -78,22 +77,16 @@ class GGE::OPTable {
 
         my $keylen = $key.chars;
         my $key_firstchar = $key.substr(0, 1);
-        # RAKUDO: max=
-        if $key_firstchar && (!%!klen.exists($key_firstchar)
-                              || %!klen{$key_firstchar} < $keylen) {
-            %!klen{$key_firstchar} = $keylen;
-        }
+        %!klen{$key_firstchar} max= $keylen;
 
-        # RAKUDO: Comma after %opts shouldn't be necessary
-        (%!keys{$key} //= []).push({%opts,});
+        (%!keys{$key} //= []).push({%opts});
     }
 
     method parse($mob, *%opts) {
         my $m = $mob ~~ GGE::Match ?? GGE::Match.new($mob)
                                    !! GGE::Match.new(:target($mob), :from(0), :to(0));
         my $target = $mob ~~ GGE::Match ?? $mob.target !! $mob;
-        # RAKUDO: Stringification needed due to [perl #73462]
-        $target = ~$target;
+        $target = $target;
         my $pos = $mob ~~ GGE::Match ?? $mob.to !! 0;
         $m.from = $pos;
         my $tighter = defined %opts<tighter> && %!tokens.exists(%opts<tighter>)
@@ -106,6 +99,7 @@ class GGE::OPTable {
         }
         my $circumnest = 0;
         my $expect = GGE_OPTABLE_EXPECT_TERM;
+        # RAKUDO: Need to manually clone the closure [perl #73034]
         my &shift_oper = pir::clone(-> $oper, $token {
             push @tokenstack, $token;
             push @operstack, $oper;
