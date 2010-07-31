@@ -95,19 +95,19 @@ class GGE::Exp is GGE::Match {
             $MATCH = $grammar;
         }
         if $name {
-            $code.emit( q[[ method %0(:$debug) {
+            $code.emit( q[[ method %0(:$debug, :$stepwise) {
     my $m = self;
             ]], $name );
         }
         else {
-            $code.emit( q[[ sub ($m, :$debug) { ]] );
+            $code.emit( q[[ sub ($m, :$debug, :$stepwise) { ]] );
         }
         $code.emit( q[[
     my $mob = %1.new($m);
     my $target = $mob.target;
     my $iscont = $mob.iscont;
     my $mfrom;
-    my $cpos = $mob.startpos;
+    my $cpos = $mob.startpos max 0;
     my $pos;
     my $rep;
     my $lastpos = $target.chars;
@@ -123,6 +123,11 @@ class GGE::Exp is GGE::Match {
         @cstack.push($label)
     };
     my &local-return = -> { @cstack.pop };
+    my &stepwise-say = -> *@_ {
+        prompt @_.join ~ ' ' ~ '.' x (58 - @_.join.chars) ~ ' '
+            if $stepwise;
+    };
+    stepwise-say "Calling rule '$name'";
     loop {
         given @cstack[*-1] {
             when 'try_match' {
@@ -134,10 +139,15 @@ class GGE::Exp is GGE::Match {
             when 'try_match_cont' {
                 if $cutmark <= %0 { goto('fail_cut'); break; }
                 ++$cpos;
-                if $iscont { goto('try_match'); break; }
+                if $iscont {
+                    stepwise-say
+                        "Backtrack. Resetting rule '$name' to position $cpos";
+                    goto('try_match'); break;
+                }
                 goto('fail_rule');
             }
             when 'fail_rule' {
+                stepwise-say "Rule '$name' failed";
                 # $cutmark = %0 # XXX: Not needed yet
                 goto('fail_cut');
             }
@@ -147,6 +157,7 @@ class GGE::Exp is GGE::Match {
                 return $mob;
             }
             when 'succeed' {
+                stepwise-say "Rule '$name' succeeded";
                 $mob.from = $mfrom;
                 $mob.to = $pos;
                 return $mob;
@@ -767,7 +778,8 @@ class GGE::Exp::Subrule is GGE::Exp does GGE::ShowContents {
                 unless $mob.can('%0') {
                     die "Unable to find regex '%0'";
                 }
-                $captob = $captob.%0(%1); ]], $subname, $subarg, |%args);
+                $captob = $captob.%0(:$stepwise, %1); ]], $subname, $subarg,
+                                                          |%args);
         if self.hash-access('iszerowidth') {
             my $test = self.hash-access('isnegated') ?? 'unless' !! 'if';
             $code.emit( q[[
