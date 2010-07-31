@@ -201,7 +201,7 @@ class GGE::Exp is GGE::Match {
     }
 
     method gencapture($label) {
-        my $cname = self.hash-access('cname');
+        my $cname = self.hash-access('cname') // '';
         my $captgen  = CodeString.new;
         my $captsave = CodeString.new;
         my $captback = CodeString.new;
