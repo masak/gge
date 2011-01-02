@@ -223,6 +223,10 @@ class GGE::Exp is GGE::Match {
                 %0 = undef;
                 goto('fail');
             }
+            when '%1_cgen_cont' {
+                %0.pop();
+                goto('fail');
+            }
             when '%1_cgen' { ]], $indexing, $label);
             }
             else {
