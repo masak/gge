@@ -92,4 +92,4 @@ sub backslash_escape($string) {
     return replace_x $string.subst(/\\n/, "\n", :g).subst(/\\r/, "\r", :g).subst(/\\e/, "\c[27]", :g).subst(/\\t/, "\t", :g).subst(/\\f/, "\f", :g);
 }
 
-done_testing;
+done;
