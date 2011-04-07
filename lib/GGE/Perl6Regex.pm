@@ -10,7 +10,7 @@ class GGE::Exp::WS is GGE::Exp::Subrule {
 }
 
 class GGE::Perl6Regex {
-    has GGE::Exp $!exp;
+    has GGE::Exp $.exp;
     has Callable $!binary;
 
     my &unescape = -> @codes { join '', map { chr(:16($_)) }, @codes };
