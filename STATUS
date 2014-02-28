@@ -55,7 +55,7 @@ Perl 6 rule features implemented
 * non-capturing subrules  (<.expr>)
 * negated subrules (<!expr>)
 * built-in rules: <alpha>, <digit>, <alnum>, <upper>, <lower>,
-    <xdigit>, <space>, <cntrl>, <punct>
+    <xdigit>, <space>, <punct>
 * backreferences ($0, $1, $<foo>)
 * scalar subrule and subpattern aliases ($<foo>:=(...), $0:=(...))
 * composed character classes (<+alpha-[aeiou]>)

@@ -211,7 +211,6 @@ class GGE::Match {
     method xdigit() { self.cclass: /<xdigit>/ }
     method space()  { self.cclass: /<space>/  }
     method blank()  { self.cclass: /<blank>/  }
-    method cntrl()  { self.cclass: /<cntrl>/  }
     method punct()  { self.cclass: /<punct>/  }
     method alnum()  { self.cclass: /<alnum>/  }
 
