@@ -5,8 +5,8 @@ class GGE::Perl6Regex {}
 
 # This is a workaround. See the postcircumfix:<{ }> comments below.
 class Store {
-    has %!hash is rw;
-    has @!array is rw;
+    has %!hash;
+    has @!array;
 
     method hash-access($key) { %!hash{$key} }
     method hash-exists($key) { %!hash.exists($key) }

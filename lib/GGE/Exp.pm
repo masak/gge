@@ -76,7 +76,7 @@ class GGE::Exp is GGE::Match {
             return $source;
         }
         else {
-            my $binary = eval $source
+            my $binary = EVAL $source
                 or die ~$!;
             return $binary;
         }
