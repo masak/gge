@@ -79,7 +79,7 @@ class GGE::OPTable {
         my $keylen = $key.chars;
         my $key_firstchar = $key.substr(0, 1);
         # RAKUDO: max=
-        if $key_firstchar && (!%!klen.exists($key_firstchar)
+        if $key_firstchar && (%!klen{$key_firstchar}:!exists
                               || %!klen{$key_firstchar} < $keylen) {
             %!klen{$key_firstchar} = $keylen;
         }
@@ -94,7 +94,7 @@ class GGE::OPTable {
         my $target = $mob ~~ GGE::Match ?? $mob.target !! $mob;
         my $pos = $mob ~~ GGE::Match ?? $mob.to !! 0;
         $m.from = $pos;
-        my $tighter = defined %opts<tighter> && %!tokens.exists(%opts<tighter>)
+        my $tighter = defined %opts<tighter> && (%!tokens{%opts<tighter>}:exists)
                         ?? %!tokens{%opts<tighter>}<precedence>
                         !! '';
         my (@termstack, @tokenstack, @operstack);

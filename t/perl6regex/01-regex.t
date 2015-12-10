@@ -80,4 +80,4 @@ sub backslash_escape($string) {
                   .subst(/'\\x' (<[0..9a..f]>**{2..4})/, { chr(:16($0)) }, :g);
 }
 
-done_testing;
+done-testing;

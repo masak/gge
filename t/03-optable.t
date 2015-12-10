@@ -195,4 +195,4 @@ sub tree($match) {
     return $r;
 }
 
-done_testing;
+done-testing;
