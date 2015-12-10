@@ -2,6 +2,14 @@
     "name"        : "GGE",
     "version"     : "*",
     "description" : "Glacial Grammar Engine -- a Perl 6 grammar engine written in Perl 6",
+    "provides"    : {
+        "GGE"             : "lib/GGE.pm",
+        "GGE::Exp"        : "lib/GGE/Exp.pm",
+        "GGE::Match"      : "lib/GGE/Match.pm",
+        "GGE::OPTable"    : "lib/GGE/OPTable.pm",
+        "GGE::Grammar"    : "lib/GGE/Grammar.pm",
+        "GGE::Perl6Regex" : "lib/GGE/Perl6Regex.pm"
+    },
     "depends"     : [ ],
     "source-url"  : "git://github.com/masak/gge.git"
 }
