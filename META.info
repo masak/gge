@@ -1,4 +1,5 @@
 {
+    "perl"        : "6.*",
     "name"        : "GGE",
     "version"     : "*",
     "description" : "Glacial Grammar Engine -- a Perl 6 grammar engine written in Perl 6",
